@@ -1,3 +1,6 @@
+from typing import List, Dict, Optional, Union, Iterable, Any
+from .graphs import Graph
+from .agents import Agent
 
 
 class ABModel:
@@ -5,40 +8,40 @@ class ABModel:
     An agent-based model class that is capable of handling multiple layers that affect agent behaviour.
     """
     def __init__(self):
-        self.graphs = []
-        self.agents = []
-        self.iteration = 0
+        self.graphs: Iterable[Graph] = []
+        self.agents: Iterable[Agent] = []
+        self.iteration: int = 0
 
-    def init_graphs(self, graphs):
+    def init_graphs(self, graphs: Iterable[Union[Graph, str]]) -> None:
         """
         Defines the graphs to be used for the model.
 
-        :param graphs: list of either created Graph objects, or relevant filenames
+        :param graphs: A list of either created Graph objects, or relevant filenames.
         """
         pass
 
-    def init_agents(self, number=100, agents=None):
+    def init_agents(self, number: Optional[int] = 100, agents: Optional[Iterable[Agent]] = None) -> None:
         """
         Defines the agents to be used for the model.
 
-        :param number: number of agents to be randomly created
-        :param agents: list of created Agent objects
+        :param number: Number of agents to be randomly created.
+        :param agents: List of created Agent objects.
         """
         pass
 
-    def step(self):
+    def step(self) -> None:
         """
         Steps the model forward one iteration.
         """
         pass
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the agents' internal states to match the model step.
         """
         pass
 
-    def visualise(self):
+    def visualise(self) -> None:
         """
         Visualises the agents' internal states.
         """
