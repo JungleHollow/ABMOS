@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import List, Dict, Optional, Union, Iterable, Any
 
 
@@ -25,7 +26,7 @@ class Agent:
         """
         pass
 
-    def radicalisation(self, neighbours):
+    def radicalisation(self, neighbours: Iterable[Agent]) -> bool:
         """
         Uses the agent's own opinion as well as the neighbours' opinions to determine if
         the agent has become radicalised in their actions.
