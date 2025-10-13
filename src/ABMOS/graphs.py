@@ -1,4 +1,5 @@
-from typing import List, Dict, Optional, Union, Iterable, Any
+from typing import Dict, Optional, Union
+from collections.abc import Iterable
 from .agents import Agent
 
 

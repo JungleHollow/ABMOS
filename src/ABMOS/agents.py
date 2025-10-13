@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List, Dict, Optional, Union, Iterable, Any
+from typing import Dict, Optional, Union, Any
+from collections.abc import Iterable
 
 
 class Agent:
