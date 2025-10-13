@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build >= 0.8.22, <0.9.0"]
+requires = ["uv_build >= 0.8.22"]
 build-backend = "uv_build"
 
 [project]
@@ -11,7 +11,9 @@ authors = [
 description = "An open source agent-based modelling framework"
 readme = "README.md"
 requies-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "uv-build>=0.8.22",
+]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
