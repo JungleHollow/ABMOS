@@ -10,7 +10,7 @@ authors = [
 ]
 description = "An open source agent-based modelling framework"
 readme = "README.md"
-requies-python = ">=3.10"
+requires-python = ">=3.10"
 dependencies = [
     "uv-build>=0.8.22",
 ]
