@@ -10,10 +10,9 @@ class Agent:
     """
     A class to define the Agent objects that will interact with each other in an agent-based model.
     """
-    def __init__(self, argv: Optional[Dict[str, Any]] = None):
-        if argv:  # Attributes provided as dict on creation
-            for key, val in argv.items():
-                self.__dict__[key] = val
+    def __init__(self, *args, **kwargs):
+        if kwargs:  # Attributes provided as dict on creation
+            self.__dict__ = kwargs
 
     def add_attribute(self, name: str, value: Optional[Any] = None) -> None:
         """

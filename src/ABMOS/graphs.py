@@ -3,7 +3,7 @@ import networkx
 import numpy as np
 from typing import Dict, Optional, Union
 from collections.abc import Iterable
-from .agents import Agent
+from .Agents import Agent
 
 
 class Graph:
