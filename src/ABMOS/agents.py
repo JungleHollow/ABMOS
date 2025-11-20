@@ -11,9 +11,33 @@ class Agent:
     A class to define the Agent objects that will interact with each other in an agent-based model.
     """
     def __init__(self, *args, **kwargs):
-        if kwargs:  # Attributes provided as dict on creation
-            self.__dict__ = kwargs
-
+        """
+        Supported positional arguments:
+            - <dict> of {graph_id : weight} for the personal value that this Agent assigns to each social hierarchy
+            - <integer> to set an explicit id for the Agent
+            - <float> in the range [-1, 1] to set the Agent's initial opinion on the topic of interest
+            - (x, y) for the initial position of the Agent
+        
+        :param args: positional arguments that can be passed to each Agent
+        :param kwargs: keyword arguments that can be passed to each Agent
+        """
+        
+        if args:
+            for arg in args:
+                match arg:
+                    case dict():
+                        self.add_attribute("social_weightings", arg)
+                    case int():
+                        self.add_attribute("id", arg)
+                    case float():
+                        self.add_attribute("opinion", arg)
+                    case tuple():
+                        self.add_attribute("position", arg)
+                 
+        if kwargs:
+            for key, value in kwargs.items():
+                self.add_attribute(key, value)
+        
     def add_attribute(self, name: str, value: Optional[Any] = None) -> None:
         """
         Dynamically add an attribute to this Agent object.
@@ -43,8 +67,8 @@ class Agent:
         :param neighbours: A list of all agents that "neighbour" this agent in any model layer.
         """
         pass
-    
-    
+        
+        
 class AgentSet(MutableSet, Sequence):
     """
     An ordered collection of Agent objects that maintains consistency for the Model
