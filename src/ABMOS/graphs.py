@@ -1,3 +1,6 @@
+from __future__ import annotations
+import networkx
+import numpy as np
 from typing import Dict, Optional, Union
 from collections.abc import Iterable
 from .agents import Agent

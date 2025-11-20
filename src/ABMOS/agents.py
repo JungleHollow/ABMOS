@@ -1,5 +1,6 @@
-import numpy as np
 from __future__ import annotations
+import numpy as np
+import contextlib
 from typing import Dict, Optional, Union, Any
 from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet, Sequence
 from random import Random
@@ -51,6 +52,7 @@ class AgentSet(MutableSet, Sequence):
     """
     def __init__(self, agents: Iterable[Agent], random: Random | None = None):
         self._agents = None
+        self.random = None
         pass
     
     def __len__(self) -> int:
@@ -82,4 +84,33 @@ class AgentSet(MutableSet, Sequence):
         :return: an AgentSet containing a filtered subset of Agents
         """
         pass
+    
+    def __getitem__(self, item: int | slice) -> Agent:
+        """
+        Retrieve an Agent or slice of Agents from the AgentSet.
+        :param item: the index or slice for selecting the agents
+        :return: the selected agent or slice of agents based on the specified item
+        """
+    
+    def add(self, agent: Agent):
+        """
+        Add an Agent to the AgentSet.
+        :param agent: the Agent object to be added
+        """
+        self._agents[agent] = None
+    
+    def discard(self, agent: Agent):
+        """
+        Remove an Agent from the AgentSet.
+        :param agent: the Agent object to be discarded
+        """
+        with contextlib.suppress(KeyError):
+            del self._agents[agent]
+    
+    def __getstate__(self) -> dict:
+        """
+        Retrive the current state of the AgentSet for serialization.
+        :return: a dictionary representing the current state of the AgentSet
+        """
+        return {"agents": list(self._agents.keys()), "random": self.random}
     

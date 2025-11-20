@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Dict, Optional, Union
 from collections.abc import Iterable
 from .graphs import Graph
