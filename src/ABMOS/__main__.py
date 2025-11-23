@@ -3,11 +3,11 @@ from .Agents import Agent
 from .Model import ABModel
 import argparse
 
-VERSION = "0.1"
-AUTHORS = "Manuel Munizaga Sepulveda"
-LICENSE = "MIT License"
-YEAR = "2025"
-REPO = "https://www.github.com/JungleHollow/ABMOS"
+__version__ = "0.1"
+__authors__ = "Manuel Munizaga Sepulveda"
+__license__ = "MIT License"
+__year__ = "2025"
+__repo__ = "https://www.github.com/JungleHollow/ABMOS"
 
 ###
 # This may be turned into a CLI entry point or extended context manager in the future...
