@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import weakref
 from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet, Sequence
 from random import Random
 from typing import Any, Dict, Optional, Union
@@ -72,7 +73,7 @@ class Agent:
 
         :param neighbours: A list of all agents that "neighbour" this agent in any model layer.
         """
-        pass
+        return False  # TODO: Finish this method (returning False to suppress typing warnings)
 
 
 class AgentSet(MutableSet, Sequence):
@@ -81,8 +82,8 @@ class AgentSet(MutableSet, Sequence):
     """
 
     def __init__(self, agents: Iterable[Agent], random: Random | None = None):
-        self._agents = None
-        self.random = None
+        self._agents = weakref.WeakKeyDictionary(dict.fromkeys(agents))
+        self.random: Random | None = None
         pass
 
     def __len__(self) -> int:
@@ -108,7 +109,7 @@ class AgentSet(MutableSet, Sequence):
         self,
         filter_func: Callable[[Agent], bool] | None = None,
         inplace: bool = False,
-        k: int = np.inf,
+        k: float = np.inf,
     ) -> AgentSet:
         """
         Select a subset of Agent objects from the AgentSet.
@@ -126,6 +127,7 @@ class AgentSet(MutableSet, Sequence):
         :param item: the index or slice for selecting the agents
         :return: the selected agent or slice of agents based on the specified item
         """
+        pass
 
     def add(self, agent: Agent):
         """
