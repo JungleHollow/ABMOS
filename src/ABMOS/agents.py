@@ -54,6 +54,12 @@ class Agent:
         """
         self.__dict__[name] = value
 
+    def get_attribute(self, name: str) -> Any:
+        try:
+            return self.__dict__[name]
+        except KeyError:
+            return None
+
     def step(self):
         """
         Step the individual agent object
@@ -73,6 +79,15 @@ class Agent:
 
         :param neighbours: A list of all agents that "neighbour" this agent in any model layer.
         """
+        match self.__getattribute__("personality"):
+            case "rational":
+                pass
+            case "erratic":
+                pass
+            case "impulsive":
+                pass
+            case None:
+                pass
         return False  # TODO: Finish this method (returning False to suppress typing warnings)
 
 
