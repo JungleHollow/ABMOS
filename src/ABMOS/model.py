@@ -1,14 +1,17 @@
 from __future__ import annotations
-from typing import Dict, Optional, Union
+
 from collections.abc import Iterable
-from .Graphs import Graph
-from .Agents import Agent
+from typing import Dict, Optional, Union
+
+from .agents import Agent
+from .graphs import Graph
 
 
 class ABModel:
     """
     An agent-based model class that is capable of handling multiple layers that affect agent behaviour.
     """
+
     def __init__(self):
         self.graphs: Iterable[Graph] = []
         self.agents: Iterable[Agent] = []
@@ -22,7 +25,9 @@ class ABModel:
         """
         pass
 
-    def init_agents(self, number: Optional[int] = 100, agents: Optional[Iterable[Agent]] = None) -> None:
+    def init_agents(
+        self, number: Optional[int] = 100, agents: Optional[Iterable[Agent]] = None
+    ) -> None:
         """
         Defines the agents to be used for the model.
 

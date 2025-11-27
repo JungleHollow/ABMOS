@@ -1,9 +1,12 @@
 from __future__ import annotations
+
+from collections.abc import Iterable
+from typing import Dict, Optional, Union
+
 import networkx
 import numpy as np
-from typing import Dict, Optional, Union
-from collections.abc import Iterable
-from .Agents import Agent
+
+from .agents import Agent
 
 
 class Graph:
@@ -12,6 +15,7 @@ class Graph:
     This corresponds to the agents' attitudes towards one another
     with respect to different social hierarchies.
     """
+
     def __init__(self):
         self.nodes: Optional[Iterable[Agent]] = None
         self.edges: Optional[Iterable[Iterable[int]]] = None
@@ -28,8 +32,13 @@ class Graph:
         """
         pass
 
-    def create_graph(self, nodes: Iterable[Agent], edges: Iterable[Iterable[int]],
-                     weights: Iterable[Iterable[float]], name: Optional[str] = None):
+    def create_graph(
+        self,
+        nodes: Iterable[Agent],
+        edges: Iterable[Iterable[int]],
+        weights: Iterable[Iterable[float]],
+        name: Optional[str] = None,
+    ):
         """
         Creates a new Graph object from the given parameters.
 
@@ -59,7 +68,9 @@ class Graph:
         """
         pass
 
-    def add_node(self, node: Agent, edges: Iterable[int], weights: Iterable[float]) -> None:
+    def add_node(
+        self, node: Agent, edges: Iterable[int], weights: Iterable[float]
+    ) -> None:
         """
         Adds a new agent to the graph, and creates all relationships involving it.
 
