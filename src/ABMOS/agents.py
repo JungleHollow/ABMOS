@@ -223,13 +223,25 @@ class GroupBy:
         pass
 
     def count(self) -> dict[Any, int]:
+        """
+        The function will return a count of the Agents within each group
+        """
         pass
 
     def agg(self, attrib_name: str, func: Callable) -> dict[Hashable, Any]:
+        """
+        The function will aggregate all Agents into hashed subgroups
+        """
         pass
 
     def __iter__(self):
+        """
+        An override of the __iter__ function to enable the groups to be iterated correctly
+        """
         return iter(self.groups.items())
 
     def __len__(self):
+        """
+        An override of the __len__ function to enable the length of the groups to be determined correctly
+        """
         return len(self.groups)
