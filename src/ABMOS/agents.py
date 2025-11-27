@@ -121,13 +121,13 @@ class AgentSet(MutableSet, Sequence):
         """
         pass
 
-    def __getitem__(self, item: int | slice) -> Agent:
+    def __getitem__(self, item: int | slice) -> Agent | list[Agent]:
         """
         Retrieve an Agent or slice of Agents from the AgentSet.
         :param item: the index or slice for selecting the agents
         :return: the selected agent or slice of agents based on the specified item
         """
-        pass
+        return list(self._agents.keys())[item]
 
     def add(self, agent: Agent):
         """
@@ -138,11 +138,18 @@ class AgentSet(MutableSet, Sequence):
 
     def discard(self, agent: Agent):
         """
-        Remove an Agent from the AgentSet.
+        Remove an Agent from the AgentSet (doesn't raise an error if non existent).
         :param agent: the Agent object to be discarded
         """
         with contextlib.suppress(KeyError):
             del self._agents[agent]
+
+    def remove(self, agent: Agent):
+        """
+        Remove an Agent from the AgentSet (raises an error if non existent).
+        :param agent: the Agent object to be removed
+        """
+        del self._agents[agent]
 
     def __getstate__(self) -> dict:
         """
