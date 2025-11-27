@@ -118,8 +118,9 @@ class AgentSet(MutableSet, Sequence):
     An ordered collection of Agent objects that maintains consistency for the Model
     """
 
-    def __init__(self, agents: Iterable[Agent], random: Random | None = None):
-        self._agents = weakref.WeakKeyDictionary(dict.fromkeys(agents))
+    def __init__(self, agents: Iterable[Agent] = [], random: Random | None = None):
+        self.agents = agents
+        self._agents = weakref.WeakKeyDictionary(dict.fromkeys(self.agents))
         self.random: Random | None = None
         pass
 
