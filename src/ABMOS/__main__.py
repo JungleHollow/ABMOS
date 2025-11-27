@@ -1,7 +1,8 @@
-from .Graphs import Graph
-from .Agents import Agent
-from .Model import ABModel
 import argparse
+
+from .agents import Agent
+from .graphs import Graph
+from .model import ABModel
 
 __version__ = "0.1"
 __authors__ = "Manuel Munizaga Sepulveda"
