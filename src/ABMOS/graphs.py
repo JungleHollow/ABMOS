@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Dict, Optional, Union
 
 import networkx
 import numpy as np
@@ -17,11 +16,11 @@ class Graph:
     """
 
     def __init__(self):
-        self.nodes: Optional[Iterable[Agent]] = None
-        self.edges: Optional[Iterable[Iterable[int]]] = None
+        self.nodes: Iterable[Agent] | None = None
+        self.edges: Iterable[Iterable[int]] | None = None
         self.node_count: int = 0
         self.edge_count: int = 0
-        self.weights: Optional[Iterable[Iterable[float]]] = None
+        self.weights: Iterable[Iterable[float]] | None = None
         self.name: str = ""
 
     def load_graph(self, path: str) -> None:
@@ -37,7 +36,7 @@ class Graph:
         nodes: Iterable[Agent],
         edges: Iterable[Iterable[int]],
         weights: Iterable[Iterable[float]],
-        name: Optional[str] = None,
+        name: str | None = None,
     ):
         """
         Creates a new Graph object from the given parameters.

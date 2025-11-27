@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Dict, Optional, Union
 
 from .agents import Agent
 from .graphs import Graph
@@ -17,7 +16,7 @@ class ABModel:
         self.agents: Iterable[Agent] = []
         self.iteration: int = 0
 
-    def init_graphs(self, graphs: Iterable[Union[Graph, str]]) -> None:
+    def init_graphs(self, graphs: Iterable[Graph | str]) -> None:
         """
         Defines the graphs to be used for the model.
 
@@ -26,7 +25,7 @@ class ABModel:
         pass
 
     def init_agents(
-        self, number: Optional[int] = 100, agents: Optional[Iterable[Agent]] = None
+        self, number: int = 100, agents: Iterable[Agent] | None = None
     ) -> None:
         """
         Defines the agents to be used for the model.
