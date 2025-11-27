@@ -29,7 +29,7 @@ class Agent:
 
         self.id: int | None = None
         self.opinion: float | None = 0.0
-        self.social_weightings: dict[str, float] | None = None
+        self.social_weightings: dict[str, float] = {}
         self.personality: str = "Neutral"
         self.position: tuple[int, int]
 
@@ -95,6 +95,22 @@ class Agent:
             case None:
                 pass
         return False  # TODO: Finish this method (returning False to suppress typing warnings)
+
+    def evolve_relationships(self):
+        """
+        Experimental function that aims to model the constantly evolving relationships between Agents over time
+        """
+        raise NotImplementedError(
+            "Agent relationship evolution has not been implemented as a feature yet."
+        )
+
+    def life_events(self):
+        """
+        Experimental function that aims to model the ways in which Agent behaviours change according to major random life events over time
+        """
+        raise NotImplementedError(
+            "Agent life events have not been implemented as a feature yet."
+        )
 
 
 class AgentSet(MutableSet, Sequence):

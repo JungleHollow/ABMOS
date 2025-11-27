@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 import networkx
 import numpy as np
+import rustworkx
 
 from .agents import Agent
 
@@ -80,3 +81,39 @@ class Graph:
 
         # TODO: This will accept 1D lists for edges and weights but will update the 2D matrices for the graph(s)...
         pass
+
+    def agent_in_graph(self, agent: Agent) -> bool:
+        """
+        A simple function that checks wether an Agent exists within a Graph
+        :param agent: the Agent whose existence in the Graph is being checked for
+        """
+        if agent in self.nodes:
+            return True
+        return False
+
+
+class GraphSet:
+    """
+    A class that will collect all of the different social hierarchy graphs in the same structure
+    and provide utilities using this collection
+    """
+
+    def __init__(self, graphs: Iterable[Graph] = []) -> None:
+        self.graphs: Iterable[Graph] = graphs
+
+    def agent_opinion_threshold(
+        self, agent: Agent, threshold: float = 0.9
+    ) -> Iterable[str]:
+        """
+        A utility function that iterates over the GraphSet and records for which social hierarchies a specific Agent's weighting
+        of those hierarchies is above a certain threshold value
+        :param agent: the Agent for which to check the AgentSet for
+        :param threshold: the absolute threshold value over which the Agent's opinion is considered significant
+        """
+        significant_hierarchies: Iterable[str] = []
+        for hierarchy in self.graphs:
+            if hierarchy.agent_in_graph(agent):
+                social_weighting: float = agent.social_weightings[hierarchy.name]
+                if abs(social_weighting) > threshold:
+                    significant_hierarchies.append(hierarchy.name)
+        return significant_hierarchies
