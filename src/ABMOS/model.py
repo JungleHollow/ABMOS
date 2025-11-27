@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from .agents import Agent
-from .graphs import Graph
+from .agents import Agent, AgentSet
+from .graphs import Graph, GraphSet
 
 
 class ABModel:
@@ -12,8 +12,8 @@ class ABModel:
     """
 
     def __init__(self):
-        self.graphs: Iterable[Graph] = []
-        self.agents: Iterable[Agent] = []
+        self.graphs: GraphSet = GraphSet()
+        self.agents: AgentSet = AgentSet()
         self.iteration: int = 0
 
     def init_graphs(self, graphs: Iterable[Graph | str]) -> None:

@@ -112,6 +112,12 @@ class Agent:
             "Agent life events have not been implemented as a feature yet."
         )
 
+    def __in__(self, iterable: Iterable[Agent]) -> bool:
+        for agent in iterable:
+            if self == agent:
+                return True
+        return False
+
 
 class AgentSet(MutableSet, Sequence):
     """

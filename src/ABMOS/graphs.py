@@ -17,11 +17,11 @@ class Graph:
     """
 
     def __init__(self):
-        self.nodes: Iterable[Agent] | None = None
-        self.edges: Iterable[Iterable[int]] | None = None
+        self.nodes: Iterable[Agent] = []
+        self.edges: Iterable[Iterable[int]] = []
         self.node_count: int = 0
         self.edge_count: int = 0
-        self.weights: Iterable[Iterable[float]] | None = None
+        self.weights: Iterable[Iterable[float]] = []
         self.name: str = ""
 
     def load_graph(self, path: str) -> None:
@@ -87,7 +87,7 @@ class Graph:
         A simple function that checks wether an Agent exists within a Graph
         :param agent: the Agent whose existence in the Graph is being checked for
         """
-        if agent in self.nodes:
+        if agent.__in__(self.nodes):
             return True
         return False
 
