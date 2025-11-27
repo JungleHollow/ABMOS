@@ -27,6 +27,12 @@ class Agent:
         :param kwargs: keyword arguments that can be passed to each Agent
         """
 
+        self.id: int | None = None
+        self.opinion: float | None = 0.0
+        self.social_weightings: dict[str, float] | None = None
+        self.personality: str = "Neutral"
+        self.position: tuple[int, int]
+
         if args:
             for arg in args:
                 match arg:
