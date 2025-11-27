@@ -157,3 +157,35 @@ class AgentSet(MutableSet, Sequence):
         :return: a dictionary representing the current state of the AgentSet
         """
         return {"agents": list(self._agents.keys()), "random": self.random}
+
+
+class GroupBy:
+    """
+    Helper class for AgentSet.groupby
+
+    Attributes:
+        groups (dict): a dictionary with the group name as key and group as values
+    """
+
+    def __init__(self, groups: dict[Any, list | AgentSet]) -> None:
+        """
+        Initialises the GroupBy instance
+
+        :param groups: a dictionary with the group name as keys and group as values
+        """
+        self.groups: dict[Any, list | AgentSet] = groups
+
+    def map(self, method: Callable | str, *args, **kwargs) -> dict[Any, Any]:
+        pass
+
+    def count(self) -> dict[Any, int]:
+        pass
+
+    def agg(self, attrib_name: str, func: Callable) -> dict[Hashable, Any]:
+        pass
+
+    def __iter__(self):
+        return iter(self.groups.items())
+
+    def __len__(self):
+        return len(self.groups)
