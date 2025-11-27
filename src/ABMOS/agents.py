@@ -4,7 +4,7 @@ import contextlib
 import weakref
 from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet, Sequence
 from random import Random
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class Agent:
             for key, value in kwargs.items():
                 self.add_attribute(key, value)
 
-    def add_attribute(self, name: str, value: Optional[Any] = None) -> None:
+    def add_attribute(self, name: str, value: Any | None = None) -> None:
         """
         Dynamically add an attribute to this Agent object.
 
