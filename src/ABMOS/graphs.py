@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 import networkx
 import numpy as np
+import polars as pl
 import rustworkx
 
 from .agents import Agent
@@ -99,7 +100,7 @@ class GraphSet:
     """
 
     def __init__(self, graphs: Iterable[Graph] = []) -> None:
-        self.graphs: Iterable[Graph] = graphs
+        self.graphs: pl.Series = pl.Series(graphs)
 
     def agent_opinion_threshold(
         self, agent: Agent, threshold: float = 0.9

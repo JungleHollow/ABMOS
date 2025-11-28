@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import contextlib
-import weakref
-from collections.abc import Callable, Hashable, Iterable, Iterator, MutableSet, Sequence
+from collections.abc import Callable, Generator, Hashable, Iterable
 from random import Random
-from typing import Any
+from typing import Any, override
 
 import numpy as np
+import polars as pl
 
 
 class Agent:
@@ -49,21 +49,31 @@ class Agent:
 
         if kwargs:
             for key, value in kwargs.items():
+                # No checking for duplicate keys; assume that explicitly added kwargs should override any args.
                 self.add_attribute(key, value)
 
-    def add_attribute(self, name: str, value: Any | None = None) -> None:
+    def add_attribute(
+        self, name: str, value: Any | None = None, overwrite: bool = False
+    ) -> None:
         """
         Dynamically add an attribute to this Agent object.
 
         :param name: The name of the attribute to be added.
         :param value: Optional initial value of the attribute.
         """
-        self.__dict__[name] = value
+        if not overwrite and name in self.__dict__.keys():
+            # Print a warning but do not change any attributes or crash the model if overwriting an existing attribute without meaning to.
+            print(
+                "Attempting to overwrite an existing Agent attribute without meaning to."
+            )
+        else:
+            self.__dict__[name] = value
 
     def get_attribute(self, name: str) -> Any:
         try:
             return self.__dict__[name]
         except KeyError:
+            print("Attempting to get an Agent attribute which doesn't exist.")
             return None
 
     def step(self):
@@ -119,14 +129,14 @@ class Agent:
         return False
 
 
-class AgentSet(MutableSet, Sequence):
+class AgentSet(pl.Series):
     """
     An ordered collection of Agent objects that maintains consistency for the Model
     """
 
     def __init__(self, agents: Iterable[Agent] = [], random: Random | None = None):
         self.agents = agents
-        self._agents = weakref.WeakKeyDictionary(dict.fromkeys(self.agents))
+        self._agents = pl.Series(self.agents)
         self.random: Random | None = None
         pass
 
@@ -136,18 +146,18 @@ class AgentSet(MutableSet, Sequence):
         """
         return len(self._agents)
 
-    def __iter__(self) -> Iterator[Agent]:
+    def __iter__(self) -> Generator[Agent]:
         """
         :return: an iterator which yields each agent in the AgentSet
         """
-        return self._agents.keys()
+        return self._agents.__iter__()
 
     def __contains__(self, agent: Agent) -> bool:
         """
         :param agent: the specific Agent object to check for
         :return: a boolean indicating if the specified Agent object is in the AgentSet
         """
-        return agent in self._agents
+        return self._agents.__contains__(agent)
 
     def select(
         self,
@@ -165,42 +175,46 @@ class AgentSet(MutableSet, Sequence):
         """
         pass
 
-    def __getitem__(self, item: int | slice) -> Agent | list[Agent]:
+    def __getitem__(
+        self, item: int | slice
+    ) -> pl.Series:  # TODO: Fix the item type mismatch here
         """
         Retrieve an Agent or slice of Agents from the AgentSet.
         :param item: the index or slice for selecting the agents
         :return: the selected agent or slice of agents based on the specified item
         """
-        return list(self._agents.keys())[item]
+        return self._agents.__getitem__(item)
 
     def add(self, agent: Agent):
         """
         Add an Agent to the AgentSet.
         :param agent: the Agent object to be added
         """
-        self._agents[agent] = None
+        self._agents.__add__(agent)
 
-    def discard(self, agent: Agent):
-        """
-        Remove an Agent from the AgentSet (doesn't raise an error if non existent).
-        :param agent: the Agent object to be discarded
-        """
-        with contextlib.suppress(KeyError):
-            del self._agents[agent]
+    # TODO: Fix the deletion methods to work with polars Series
+    # def discard(self, agent: Agent):
+    #     """
+    #     Remove an Agent from the AgentSet (doesn't raise an error if non existent).
+    #     :param agent: the Agent object to be discarded
+    #     """
+    #     with contextlib.suppress(KeyError):
+    #         del self._agents[agent]
 
-    def remove(self, agent: Agent):
-        """
-        Remove an Agent from the AgentSet (raises an error if non existent).
-        :param agent: the Agent object to be removed
-        """
-        del self._agents[agent]
+    # def remove(self, agent: Agent):
+    #     """
+    #     Remove an Agent from the AgentSet (raises an error if non existent).
+    #     :param agent: the Agent object to be removed
+    #     """
+    #     del self._agents[agent]
 
+    @override
     def __getstate__(self) -> dict:
         """
         Retrive the current state of the AgentSet for serialization.
         :return: a dictionary representing the current state of the AgentSet
         """
-        return {"agents": list(self._agents.keys()), "random": self.random}
+        return {"agents": list(self._agents), "random": self.random}
 
 
 class GroupBy:
