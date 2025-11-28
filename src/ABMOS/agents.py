@@ -185,28 +185,31 @@ class AgentSet(pl.Series):
         """
         return self._agents.__getitem__(item)
 
-    def add(self, agent: Agent):
+    def add(self, agent: Agent) -> int:
         """
         Add an Agent to the AgentSet.
         :param agent: the Agent object to be added
         """
+        for idx, agnt in enumerate(self._agents):
+            if agnt is None:
+                self._agents[idx] = agent
+                return 1
         self._agents.__add__(agent)
+        return 1
 
-    # TODO: Fix the deletion methods to work with polars Series
-    # def discard(self, agent: Agent):
-    #     """
-    #     Remove an Agent from the AgentSet (doesn't raise an error if non existent).
-    #     :param agent: the Agent object to be discarded
-    #     """
-    #     with contextlib.suppress(KeyError):
-    #         del self._agents[agent]
+    def discard(self, agent: Agent) -> int:
+        for idx, agnt in enumerate(self._agents):
+            if agent == agnt:
+                self._agents[idx] = None
+                return 1
+        return 0
 
-    # def remove(self, agent: Agent):
-    #     """
-    #     Remove an Agent from the AgentSet (raises an error if non existent).
-    #     :param agent: the Agent object to be removed
-    #     """
-    #     del self._agents[agent]
+    def remove(self, agent: Agent) -> int:
+        for idx, agnt in enumerate(self._agents):
+            if agent == agnt:
+                self._agents[idx] = None
+                return 1
+        raise KeyError("Tried to remove an Agent that doesn't exist in the AgentSet")
 
     @override
     def __getstate__(self) -> dict:
