@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Callable, Generator, Hashable, Iterable
+from collections.abc import Callable, Generator, Hashable, Iterable, Iterator
 from random import Random
 from typing import Any, override
 
@@ -146,12 +146,6 @@ class AgentSet(pl.Series):
         """
         return len(self._agents)
 
-    def __iter__(self) -> Generator[Agent]:
-        """
-        :return: an iterator which yields each agent in the AgentSet
-        """
-        return self._agents.__iter__()
-
     def __contains__(self, agent: Agent) -> bool:
         """
         :param agent: the specific Agent object to check for
@@ -163,7 +157,7 @@ class AgentSet(pl.Series):
         self,
         filter_func: Callable[[Agent], bool] | None = None,
         inplace: bool = False,
-        k: float = np.inf,
+        k: int = int(np.inf),
     ) -> AgentSet:
         """
         Select a subset of Agent objects from the AgentSet.
@@ -173,7 +167,15 @@ class AgentSet(pl.Series):
         :param k: the maximum number of Agent objects to include in the subset
         :return: an AgentSet containing a filtered subset of Agents
         """
-        pass
+        # TODO: Find out how to properly apply the filter func to the Series
+        reduced_set = self._agents.filter(filter_func)
+        if k < len(reduced_set):
+            reduced_set = Random.sample(Random(), population=reduced_set, k=k)
+
+        if inplace:
+            self._agents = reduced_set
+
+        return self
 
     def __getitem__(
         self, item: int | slice
