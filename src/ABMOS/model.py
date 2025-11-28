@@ -4,6 +4,7 @@ from collections.abc import Iterable
 
 from .agents import Agent, AgentSet
 from .graphs import Graph, GraphSet
+from .logging import ABMOSLogger
 
 
 class ABModel:
