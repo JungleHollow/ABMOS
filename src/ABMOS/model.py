@@ -15,6 +15,7 @@ class ABModel:
     def __init__(self):
         self.graphs: GraphSet = GraphSet()
         self.agents: AgentSet = AgentSet()
+        self.logger: ABMOSLogger = ABMOSLogger()
         self.iteration: int = 0
 
     def init_graphs(self, graphs: Iterable[Graph | str]) -> None:
