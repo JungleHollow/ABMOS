@@ -52,21 +52,53 @@ class Agent:
                 self.add_attribute(key, value)
 
     def add_attribute(
-        self, name: str, value: Any | None = None, overwrite: bool = False
+        self,
+        name: str,
+        value: Any | None = None,
+        mean: float | None = None,
+        sdev: float | None = None,
+        distribution: str | None = None,
+        overwrite: bool = False,
     ) -> None:
+        # TODO: Add support for additional random distributions
         """
-        Dynamically add an attribute to this Agent object.
+        Dynamically add an attribute to this Agent object. If "value" is passed, an explicit initial value is given;
+        if "mean" and "sdev" are passed, a value is generated from a random distribution.
+        Supported random distributions are:
+            - "normal"
+            - "uniform" -- In the case of uniform, `mean` will be treated as the median value, and `sdev` as the distance between the median and the boundaries
 
         :param name: The name of the attribute to be added.
         :param value: Optional initial value of the attribute.
+        :param mean: Optional mean of the random distribution from which to generate the value
+        :param sdev: Optional standard deviation of the random distribution from which to generate the value
+        :param distribution: Optional string to select which random distribution will be used to generate the value
         """
+        if not value and (not mean and not sdev):
+            raise ValueError(
+                "Either explicit `value` or distribution `mean` and `sdev` are expected when adding Agent attributes."
+            )
+
         if not overwrite and name in self.__dict__.keys():
             # Print a warning but do not change any attributes or crash the model if overwriting an existing attribute without meaning to.
             print(
                 "Attempting to overwrite an existing Agent attribute without meaning to."
             )
         else:
-            self.__dict__[name] = value
+            if value:  # Assume a given explicit value always overrides (mean, sdev)
+                self.__dict__[name] = value
+            elif mean and sdev:
+                match distribution:
+                    case "normal":
+                        self.__dict__[name] = np.random.normal(loc=mean, scale=sdev)
+                    case "uniform":
+                        uniform_range = (mean - sdev, mean + sdev)
+                        self.__dict__[name] = np.random.uniform(
+                            low=uniform_range[0], high=uniform_range[1]
+                        )
+                    case None:
+                        # Fall back on the normal distribution
+                        self.__dict__[name] = np.random.normal(loc=mean, scale=sdev)
 
     def get_attribute(self, name: str) -> Any:
         try:
