@@ -129,7 +129,7 @@ class Agent:
         return False
 
 
-class AgentSet(pl.Series):
+class AgentSet:
     """
     An ordered collection of Agent objects that maintains consistency for the Model
     """
