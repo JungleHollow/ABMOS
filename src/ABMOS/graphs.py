@@ -60,13 +60,26 @@ class Graph:
         self.edge_count: int = 0
         self.name: str = name
 
-    def load_graph(self, path: str) -> None:
+    def load_graph(self, path: str, name: str) -> None:
         """
-        Loads a stored Graph object from the given path.
+        Loads a Graph object stored in the GraphML format from the given path.
+        The social hierarchy name must be explicitly passed with this call.
 
         :param path: Path to a stored graph file.
         """
-        pass
+        graph: list[Any] = rx.read_graphml(path)
+        self.graph = graph[0]
+        self.node_count = len(self.graph.nodes())
+        self.edge_count = len(self.graph.edges())
+        self.name = name
+
+    def save_graph(self, path: str) -> None:
+        """
+        Saves the existing Graph object in the GraphML format to the given path.
+
+        :param path: Path to which the Graph will be saved.
+        """
+        rx.write_graphml(self.graph, path)
 
     def update_node_indices(self):
         """
@@ -156,13 +169,31 @@ class Graph:
             self.graph.add_edges_from(updated_edge)
         self.update_edge_indices()
 
-    def remove_node(self, node: Agent) -> None:
+    def remove_node(self, node: int) -> None:
         """
-        Removes an agent from the graph, along with any relationships involving it.
+        Removes a node from the graph, along with any relationships involving it.
 
-        :param node: The Agent object to remove.
+        :param node: The node index to remove from the graph.
         """
-        pass
+        self.graph.remove_node(node)
+
+        edges_to_remove = []
+        for edge in self.graph.edges():
+            if edge.from_node == node or edge.to_node == node:
+                edges_to_remove.append((edge.from_node, edge.to_node))
+
+        for edge in edges_to_remove:
+            self.remove_edge(edge[0], edge[1])
+        # No need to update indices, as rustworkx will automatically add new nodes/edges into the largest empty index
+
+    def remove_edge(self, node_1: int, node_2: int) -> None:
+        """
+        Removes a single edge from the graph.
+
+        :param node_1: the from_node in the edge
+        :param node_2: the to_node in the edge
+        """
+        self.graph.remove_edge(node_1, node_2)
 
     def agent_in_graph(self, agent: Agent) -> bool:
         """
@@ -180,6 +211,21 @@ class GraphSet:
 
     def __init__(self, graphs: Iterable[Graph] = []) -> None:
         self.graphs: pl.Series = pl.Series(graphs)
+
+    def list_hierarchies(self, print_out: bool = False) -> list[str]:
+        """
+        A utility function that iterates over the GraphSet and prints out the names of all the social hierarchies that are present
+        """
+        social_hierarchies: list[str] = []
+        for graph in self.graphs:
+            social_hierarchies.append(graph.name)
+
+        if print_out:
+            print(
+                f"\nSocial hierarchies present in the GraphSet:\n\t{social_hierarchies}\n\n"
+            )
+
+        return social_hierarchies
 
     def agent_opinion_threshold(
         self, agent: Agent, threshold: float = 0.9
