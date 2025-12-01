@@ -6,6 +6,7 @@ from typing import Any
 import numpy as np
 import polars as pl
 import rustworkx as rx
+from _typeshed import Incomplete
 
 from .agents import Agent
 
@@ -30,16 +31,16 @@ class GraphEdge:
 
     def __init__(
         self,
-        weighting: float | None = None,
-        from_node: int | None = None,
-        to_node: int | None = None,
-        hierarchy: str | None = None,
+        hierarchy: str,
+        from_node: int,
+        to_node: int,
+        weighting: float = 0.0,
     ):
-        self.index: int | None = None
-        self.weighting: float | None = weighting
-        self.from_node: int | None = from_node
-        self.to_node: int | None = to_node
-        self.hierarchy: str | None = hierarchy
+        self.index: int
+        self.weighting: float = weighting
+        self.from_node: int = from_node
+        self.to_node: int = to_node
+        self.hierarchy: str = hierarchy
 
     def __str__(self):
         return f"GraphEdge of weight ({self.weighting}) from node ({self.from_node}) to node ({self.to_node}) in the {self.hierarchy} social layer"
@@ -52,14 +53,12 @@ class Graph:
     with respect to different social hierarchies.
     """
 
-    def __init__(self):
-        # TODO: Replace this with networkx and rustworx
-        self.nodes: Iterable[Agent] = []
-        self.edges: Iterable[Iterable[int]] = []
+    def __init__(self, name: str):
+        # Defined as DiGraph as it is common in social networks for relationships to be unidirectional or unbalanced
+        self.graph: rx.PyDiGraph = rx.PyDiGraph()
         self.node_count: int = 0
         self.edge_count: int = 0
-        self.weights: Iterable[Iterable[float]] = []
-        self.name: str = ""
+        self.name: str = name
 
     def load_graph(self, path: str) -> None:
         """
@@ -69,24 +68,78 @@ class Graph:
         """
         pass
 
-    def create_graph(
-        self,
-        nodes: Iterable[Agent],
-        edges: Iterable[Iterable[int]],
-        weights: Iterable[Iterable[float]],
-        name: str | None = None,
-    ):
+    def update_node_indices(self):
         """
-        Creates a new Graph object from the given parameters.
-
-        :param nodes: List of nodes (agents) in the graph.
-        :param edges: List of edges (relationships) between the agents in the graph.
-        :param weights: List of weights (relationship strengths) for the edges.
-        :param name: Optional name to label the graph as some specific social hierarchy.
+        Iterates over all the existing nodes in the graph and updates their stored indices to reflect the current graph state.
+        Will also update the graph node_count attribute
         """
-        pass
+        for index in self.graph.node_indices():
+            self.graph[index].index = index
+        self.node_count = len(self.graph.nodes())
 
-    def change_weights(self, node_1: Agent, node_2: Agent, value: float) -> None:
+    def add_nodes(self, agents: Iterable[Agent]):
+        """
+        Creates appropriate GraphNodes from the given Agents, and then adds these to the graph.
+
+        :param agents: The Agent objects that will be converted to GraphNodes and added to the graph
+        """
+        nodes = []
+        for agent in agents:
+            agent_node = GraphNode(agent)
+            nodes.append(agent_node)
+
+        self.graph.add_nodes_from(nodes)
+        self.update_node_indices()
+
+    def update_edge_indices(self):
+        """
+        Iterates over all the existing edges in the graph and updates their stored indices to reflect the current graph state.
+        Will also update the graph edge_count attribute
+        """
+        for index, data in self.graph.edge_index_map().items():
+            data[2].index = index
+        self.edge_count = len(self.graph.edges())
+
+    def add_edges(self, edges: dict):
+        """
+        Creates appropriate GraphEdges from the given dictionary and then adds these to the graph.
+
+        :param edges: A dictionary of key-list pairs where each key corresponds to (from_node, to_node, [optional] weighting)
+        """
+        graph_edges = []
+        from_nodes = edges["from_node"]
+        to_nodes = edges["to_node"]
+        weightings = None
+        if "weighting" in edges.keys():
+            weightings = edges["weighting"]
+
+        if weightings:
+            for i in range(len(from_nodes)):
+                edge = GraphEdge(self.name, from_nodes[i], to_nodes[i], weightings[i])
+                graph_edges.append(edge)
+        else:
+            for i in range(len(from_nodes)):
+                edge = GraphEdge(self.name, from_nodes[i], to_nodes[i])
+                graph_edges.append(edge)
+
+        self.graph.add_edges_from(graph_edges)
+        self.update_edge_indices()
+
+    def relationship_exists(self, node_1: int, node_2: int) -> int | None:
+        """
+        Checks for the existence of a relationship (weighted edge) between two Agents (nodes)
+
+        :param node_1: the node index of Agent 1
+        :param node_2: the node index of Agent 2
+        """
+        for edge in self.graph.edges():
+            if (edge.from_node == node_1 and edge.to_node == node_2) or (
+                edge.from_node == node_2 and edge.to_node == node_1
+            ):
+                return edge.index
+        return None
+
+    def change_weights(self, node_1: int, node_2: int, value: float) -> None:
         """
         Updates the weight of the relationship between two agents in the graph.
         If no relationship previously exists, a new one is created.
@@ -95,7 +148,13 @@ class Graph:
         :param node_2: Some other Agent in the graph.
         :param value: The new weight to assign.
         """
-        pass
+        edge_index: int | None = self.relationship_exists(node_1, node_2)
+        updated_edge: list[Any] = [GraphEdge(self.name, node_1, node_2, value)]
+        if edge_index is not None:
+            self.graph.update_edge_by_index(edge_index, updated_edge)
+        else:
+            self.graph.add_edges_from(updated_edge)
+        self.update_edge_indices()
 
     def remove_node(self, node: Agent) -> None:
         """
@@ -105,26 +164,12 @@ class Graph:
         """
         pass
 
-    def add_node(
-        self, node: Agent, edges: Iterable[int], weights: Iterable[float]
-    ) -> None:
-        """
-        Adds a new agent to the graph, and creates all relationships involving it.
-
-        :param node: The Agent object to add.
-        :param edges: A list of edges between the agent and others in the graph.
-        :param weights: A list of weights for the corresponding edges.
-        """
-
-        # TODO: This will accept 1D lists for edges and weights but will update the 2D matrices for the graph(s)...
-        pass
-
     def agent_in_graph(self, agent: Agent) -> bool:
         """
         A simple function that checks wether an Agent exists within a Graph
         :param agent: the Agent whose existence in the Graph is being checked for
         """
-        return agent.__in__(self.nodes)
+        return agent.__in__(self.graph.nodes())
 
 
 class GraphSet:
