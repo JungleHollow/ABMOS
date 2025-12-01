@@ -1,13 +1,48 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Any
 
-import networkx
 import numpy as np
 import polars as pl
-import rustworkx
+import rustworkx as rx
 
 from .agents import Agent
+
+
+class GraphNode:
+    """
+    A helper class that allows rustworx to more efficiently store information about Agents in the graph nodes
+    """
+
+    def __init__(self, agent: Agent):
+        self.index: int | None = None
+        self.agent: Agent = agent
+
+    def __str__(self):
+        return f"Agent ({self.agent.id}) at graph node ({self.index})"
+
+
+class GraphEdge:
+    """
+    A helper class that allows rustworx to more efficiently store information about Agent relationships in the graph edges
+    """
+
+    def __init__(
+        self,
+        weighting: float | None = None,
+        from_node: int | None = None,
+        to_node: int | None = None,
+        hierarchy: str | None = None,
+    ):
+        self.index: int | None = None
+        self.weighting: float | None = weighting
+        self.from_node: int | None = from_node
+        self.to_node: int | None = to_node
+        self.hierarchy: str | None = hierarchy
+
+    def __str__(self):
+        return f"GraphEdge of weight ({self.weighting}) from node ({self.from_node}) to node ({self.to_node}) in the {self.hierarchy} social layer"
 
 
 class Graph:

@@ -29,7 +29,7 @@ class Agent:
         self.id: int | None = None
         self.opinion: float | None = 0.0
         self.social_weightings: dict[str, float] = {}
-        self.personality: str = "Neutral"
+        self.personality: str = "neutral"
         self.position: tuple[int, int]
 
         if args:
@@ -85,7 +85,8 @@ class Agent:
                 "Attempting to overwrite an existing Agent attribute without meaning to."
             )
         else:
-            if value:  # Assume a given explicit value always overrides (mean, sdev)
+            if value:
+                # Assume a given explicit value always overrides (mean, sdev)
                 self.__dict__[name] = value
             elif mean and sdev:
                 match distribution:
@@ -154,6 +155,11 @@ class Agent:
         )
 
     def __in__(self, iterable: Iterable[Agent]) -> bool:
+        """
+        Determine if the Agent is contained within an iterable of Agents
+
+        :param iterable: The iterable of Agent objects in which membership is being determined
+        """
         for agent in iterable:
             if self == agent:
                 return True
@@ -211,9 +217,7 @@ class AgentSet:
 
         return self
 
-    def __getitem__(
-        self, item: int | slice
-    ) -> pl.Series | Any:  # TODO: Fix the item type mismatch here
+    def __getitem__(self, item: int | slice) -> pl.Series | Any:
         """
         Retrieve an Agent or slice of Agents from the AgentSet.
         :param item: the index or slice for selecting the agents
