@@ -135,8 +135,8 @@ class AgentSet:
     """
 
     def __init__(self, agents: Iterable[Agent] = [], random: Random | None = None):
-        self.agents = agents
-        self._agents = pl.Series(self.agents)
+        self.agents: Iterable[Agent] = agents
+        self._agents: pl.Series = pl.Series(self.agents)
         self.random: Random | None = None
         pass
 
@@ -155,7 +155,7 @@ class AgentSet:
 
     def select(
         self,
-        filter_func: Callable[[Agent], bool] | None = None,
+        filter_func: Callable[[Agent], bool],
         inplace: bool = False,
         k: int = int(np.inf),
     ) -> AgentSet:
@@ -167,10 +167,13 @@ class AgentSet:
         :param k: the maximum number of Agent objects to include in the subset
         :return: an AgentSet containing a filtered subset of Agents
         """
-        # TODO: Find out how to properly apply the filter func to the Series
-        reduced_set = self._agents.filter(filter_func)
+        set_mask = []
+        for agent in self._agents:
+            set_mask.append(filter_func(agent))
+
+        reduced_set: pl.Series = self._agents.filter(set_mask)
         if k < len(reduced_set):
-            reduced_set = Random.sample(Random(), population=reduced_set, k=k)
+            reduced_set = reduced_set.sample(n=k)
 
         if inplace:
             self._agents = reduced_set
@@ -179,7 +182,7 @@ class AgentSet:
 
     def __getitem__(
         self, item: int | slice
-    ) -> pl.Series:  # TODO: Fix the item type mismatch here
+    ) -> pl.Series | Any:  # TODO: Fix the item type mismatch here
         """
         Retrieve an Agent or slice of Agents from the AgentSet.
         :param item: the index or slice for selecting the agents
@@ -196,7 +199,7 @@ class AgentSet:
             if agnt is None:
                 self._agents[idx] = agent
                 return 1
-        self._agents.__add__(agent)
+        self._agents.append(pl.Series(agent))
         return 1
 
     def discard(self, agent: Agent) -> int:
