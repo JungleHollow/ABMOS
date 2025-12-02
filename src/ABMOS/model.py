@@ -36,16 +36,34 @@ class ABModel:
                 new_graph.load_graph(graph, names[idx])
                 self.graphs.add_graph(new_graph)
 
-    def init_agents(
-        self, number: int = 100, agents: Iterable[Agent] | None = None
-    ) -> None:
+    def add_agents(self, agents: list[Agent]) -> None:
         """
-        Defines the agents to be used for the model.
+        Add new Agents to the Model's AgentSet.
 
-        :param number: Number of agents to be randomly created.
-        :param agents: List of created Agent objects.
+        :param agents: A list of Agent objects to be added to the AgentSet
         """
-        pass
+        for agent in agents:
+            self.agents.add(agent)
+
+    def generate_agents(self, attributes: dict, number: int = 100) -> None:
+        """
+        Randomly generates a number of Agent objects using the given attribute dictionary.
+        The dictionary items should be singular explciit values to assign for all agents, or tuples representing:
+            (mean, standard deviation, distribution to use) for random generation
+
+        :param attributes: A dictionary containing (attribute: tuple) pairs for Agent attribute setting
+        :param number: Number of agents to be randomly created.
+        """
+        for i in range(number):
+            new_agent: Agent = Agent()
+            for key, value in attributes.items():
+                if len(value) == 1:
+                    new_agent.add_attribute(key, value=value)
+                else:
+                    new_agent.add_attribute(
+                        key, mean=value[0], sdev=value[1], distribution=value[2]
+                    )
+            self.agents.add(new_agent)
 
     def step(self) -> None:
         """
