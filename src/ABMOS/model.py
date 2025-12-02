@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from typing import Any
 
 from .agents import Agent, AgentSet
 from .graphs import Graph, GraphSet
@@ -12,19 +13,28 @@ class ABModel:
     An agent-based model class that is capable of handling multiple layers that affect agent behaviour.
     """
 
-    def __init__(self):
+    def __init__(self, iterations: int = 100):
         self.graphs: GraphSet = GraphSet()
         self.agents: AgentSet = AgentSet()
         self.logger: ABMOSLogger = ABMOSLogger()
-        self.iteration: int = 0
+        self.current_iteration: int = 0
+        self.max_iterations: int = iterations
 
-    def init_graphs(self, graphs: Iterable[Graph | str]) -> None:
+    def add_graphs(self, graphs: list[Any], names: list[str]) -> None:
         """
-        Defines the graphs to be used for the model.
+        Add new Graphs to the Model's GraphSet.
 
-        :param graphs: A list of either created Graph objects, or relevant filenames.
+        :param graphs: A list of Graph objects or filepaths to stored GraphML objects
+        :param names: A list of the corresponding social hierarchy names to give to the Graphs
         """
-        pass
+        if type(graphs[0]) is Graph:
+            for graph in graphs:
+                self.graphs.add_graph(graph)
+        else:
+            for idx, graph in enumerate(graphs):
+                new_graph: Graph = Graph(names[idx])
+                new_graph.load_graph(graph, names[idx])
+                self.graphs.add_graph(new_graph)
 
     def init_agents(
         self, number: int = 100, agents: Iterable[Agent] | None = None

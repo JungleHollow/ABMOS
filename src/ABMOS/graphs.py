@@ -255,7 +255,15 @@ class GraphSet:
     """
 
     def __init__(self, graphs: Iterable[Graph] = []) -> None:
-        self.graphs: pl.Series = pl.Series(graphs)
+        self.graphs: pl.Series = pl.Series(values=graphs)
+
+    def add_graph(self, graph: Graph) -> None:
+        """
+        A setter function to add a new Graph object to the GraphSet
+
+        :param graph: The Graph object to add to the GraphSet
+        """
+        self.graphs.append(pl.Series(values=graph))
 
     def graph_at_index(self, graph_index: int) -> Graph:
         """
