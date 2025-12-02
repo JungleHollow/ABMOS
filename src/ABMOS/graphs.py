@@ -19,7 +19,7 @@ class GraphNode:
     """
 
     def __init__(self, agent: Agent):
-        self.index: int | None = None
+        self.index: int
         self.agent: Agent = agent
 
     def __str__(self):
