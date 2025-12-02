@@ -25,7 +25,7 @@ class Agent:
         :param kwargs: keyword arguments that can be passed to each Agent
         """
 
-        self.id: int | str
+        self.id: int
         self.opinion: float = 0.0
         self.social_weightings: dict[str, float] = {}
         self.personality: str = "neutral"

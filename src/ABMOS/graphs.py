@@ -7,8 +7,6 @@ from typing import Any
 import numpy as np
 import polars as pl
 import rustworkx as rx
-from _typeshed import Incomplete as Incomplete
-from rustworkx.rustworkx import NodeIndices
 
 from .agents import Agent
 
