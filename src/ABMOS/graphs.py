@@ -83,6 +83,22 @@ class Graph:
         """
         rx.write_graphml(self.graph, path)
 
+    def get_node(self, node_index: int) -> GraphNode:
+        """
+        A getter function to access GraphNode objects
+
+        :param node_index: The index of the node to access
+        """
+        return self.graph.nodes()[node_index]
+
+    def get_edge(self, edge_index: int) -> GraphEdge:
+        """
+        A getter function to access GraphEdge objects
+
+        :param edge_index: The index of the edge to access
+        """
+        return self.graph.edges()[edge_index]
+
     def update_node_indices(self):
         """
         Iterates over all the existing nodes in the graph and updates their stored indices to reflect the current graph state.
