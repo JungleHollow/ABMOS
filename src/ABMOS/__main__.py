@@ -1,9 +1,13 @@
 import argparse
 
-from .agents import Agent, AgentSet
-from .graphs import Graph, GraphEdge, GraphNode, GraphSet
-from .logging import ABMOSLogger
-from .model import ABModel
+from .agents import Agent as Agent
+from .agents import AgentSet as AgentSet
+from .graphs import Graph as Graph
+from .graphs import GraphEdge as GraphEdge
+from .graphs import GraphNode as GraphNode
+from .graphs import GraphSet as GraphSet
+from .logging import ABMOSLogger as ABMOSLogger
+from .model import ABModel as ABModel
 
 __version__ = "0.1"
 __authors__ = "Manuel Munizaga Sepulveda"
