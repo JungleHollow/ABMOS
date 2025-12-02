@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
 import polars as pl
 import rustworkx as rx
-from _typeshed import Incomplete
+from _typeshed import Incomplete as Incomplete
+from rustworkx.rustworkx import NodeIndices
 
 from .agents import Agent
 
@@ -152,6 +154,32 @@ class Graph:
                 return edge.index
         return None
 
+    def get_relationships(
+        self, node_1: int, node_2: int
+    ) -> dict[tuple[int, int], float] | None:
+        """
+        Return a dictionary with the bidirectional edge weightings between two nodes if they exist
+
+        :param node_1: the node index of Agent 1
+        :param node_2: the node index of Agent 2
+        """
+        if not self.relationship_exists(node_1, node_2):
+            return None
+
+        relationships_dict: dict[tuple[int, int], float] = {}
+
+        with contextlib.suppress(KeyError):
+            relationships_dict[(node_2, node_1)] = self.graph.adj_direction(
+                node_1, True
+            )[node_2]
+
+        with contextlib.suppress(KeyError):
+            relationships_dict[(node_1, node_2)] = self.graph.adj_direction(
+                node_1, False
+            )[node_2]
+
+        return relationships_dict
+
     def change_weights(self, node_1: int, node_2: int, value: float) -> None:
         """
         Updates the weight of the relationship between two agents in the graph.
@@ -200,7 +228,10 @@ class Graph:
         A simple function that checks wether an Agent exists within a Graph
         :param agent: the Agent whose existence in the Graph is being checked for
         """
-        return agent.__in__(self.graph.nodes())
+        for node in self.graph.nodes():
+            if agent == node.agent:
+                return True
+        return False
 
 
 class GraphSet:
