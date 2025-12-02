@@ -259,6 +259,27 @@ class GraphSet:
     def __init__(self, graphs: Iterable[Graph] = []) -> None:
         self.graphs: pl.Series = pl.Series(graphs)
 
+    def graph_at_index(self, graph_index: int) -> Graph:
+        """
+        A getter function to return a Graph object stored at the given index in the GraphSet
+
+        :param graph_index: The index of the Graph to return
+        """
+        return self.graphs[graph_index]
+
+    def get_hierarchy(self, hierarchy: str) -> Graph | None:
+        """
+        A getter function to return a Graph object with the given hierarchy name
+
+        :param hierarchy: The name of the social hierarchy represented by the Graph to return
+        """
+        for graph in self.graphs:
+            if graph.name == hierarchy:
+                return graph
+
+        print(f"No graph representing the social hierarchy {hierarchy} was found...")
+        return None
+
     def list_hierarchies(self, print_out: bool = False) -> list[str]:
         """
         A utility function that iterates over the GraphSet and prints out the names of all the social hierarchies that are present
