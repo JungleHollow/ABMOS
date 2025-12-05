@@ -262,6 +262,12 @@ class Graph:
                 return True
         return False
 
+    def __str__(self) -> str:
+        """
+        An override of the Graph string representation when calling print()
+        """
+        return f"Graph representing the {self.name} social hierarchy with {self.node_count} nodes and {self.edge_count} edges"
+
 
 class GraphSet:
     """
@@ -337,3 +343,9 @@ class GraphSet:
                 if abs(social_weighting) > threshold:
                     significant_hierarchies.append(hierarchy.name)
         return significant_hierarchies
+
+    def __str__(self) -> str:
+        """
+        An override of what calling `print()` on this object will output
+        """
+        return f"GraphSet containing the graphs of the following social hierarchies:\n\n{self.list_hierarchies()}"

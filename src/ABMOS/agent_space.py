@@ -44,3 +44,9 @@ class AgentSpace:
         A getter method that returns the AgentSpace map limits as an organised dictionary.
         """
         return {"xlims": self.xlims, "ylims": self.ylims}
+
+    def __str__(self) -> str:
+        """
+        An override to what calling `print()` on this object will output
+        """
+        return f"AgentSpace of {self.space_type} type with size of {self.xlims[1]} by {self.ylims[1]} units and permitting Agent interaction at distances of up to {self.agent_sphere_of_influence} units"

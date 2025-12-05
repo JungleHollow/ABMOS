@@ -32,6 +32,7 @@ class Agent:
         self.social_weightings: dict[str, float] = {}
         self.personality: str = "neutral"
         self.position: tuple[int, int]
+        self.radicalised: bool = False
 
         if args:
             for arg in args:
@@ -126,6 +127,10 @@ class Agent:
 
         :param neighbours: A list of all agents that "neighbour" this agent in any model layer.
         """
+        # If the Agent is already radicalised, always return True
+        if self.radicalised:
+            return True
+
         match self.__getattribute__("personality"):
             case "rational":
                 pass
@@ -163,6 +168,12 @@ class Agent:
             if self == agent:
                 return True
         return False
+
+    def __str__(self) -> str:
+        """
+        An override to what calling `print()` on this object will output
+        """
+        return f"Agent {self.id} which {'is' if self.radicalised else 'is not'} radicalised with an opinion value of {self.opinion}"
 
 
 class AgentSet:
