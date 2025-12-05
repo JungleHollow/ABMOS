@@ -7,13 +7,15 @@ from typing import Any, override
 import numpy as np
 import polars as pl
 
+from .model import ABModel
+
 
 class Agent:
     """
     A class to define the Agent objects that will interact with each other in an agent-based model.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         """
         Supported positional arguments:
             - <dict> of {hierarchy_name : weight} for the personal value that this Agent assigns to each social hierarchy
@@ -168,7 +170,11 @@ class AgentSet:
     An ordered collection of Agent objects that maintains consistency for the Model
     """
 
-    def __init__(self):
+    def __init__(self, model: ABModel) -> None:
+        """
+        :param model: The parent ABModel object that this AgentSet is being attached to
+        """
+        self.parent_model = model
         self.agents: pl.Series = pl.Series()
         self.random: Random = Random()
 

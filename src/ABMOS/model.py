@@ -6,6 +6,7 @@ from .agent_space import AgentSpace
 from .agents import Agent, AgentSet
 from .graphs import Graph, GraphSet
 from .logging import ABMOSLogger
+from .visualisation import ABVisualiser
 
 
 class ABModel:
@@ -18,17 +19,23 @@ class ABModel:
         iterations: int = 100,
         xlims: tuple[float, float] | None = None,
         ylims: tuple[float, float] | None = None,
-    ):
-        self.graphs: GraphSet = GraphSet()
-        self.agents: AgentSet = AgentSet()
+    ) -> None:
+        """
+        :param iterations: The number of iterations that the model will run for
+        :param xlims: A (lower, upper) tuple representing the limits of the model's x-axis
+        :param ylims: A (lower, upper) tuple representing the limits of the model's y-axis
+        """
+        self.graphs: GraphSet = GraphSet(self)
+        self.agents: AgentSet = AgentSet(self)
 
         self.agent_space: AgentSpace
         if xlims is not None and ylims is not None:
-            self.agent_space = AgentSpace(xlims=xlims, ylims=ylims)
+            self.agent_space = AgentSpace(self, xlims=xlims, ylims=ylims)
         else:
-            self.agent_space = AgentSpace()
+            self.agent_space = AgentSpace(self)
 
-        self.logger: ABMOSLogger = ABMOSLogger()
+        self.logger: ABMOSLogger = ABMOSLogger(self)
+        self.visualiser: ABVisualiser = ABVisualiser(self)
         self.current_iteration: int = 0
         self.max_iterations: int = iterations
 

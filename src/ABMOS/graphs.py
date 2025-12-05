@@ -9,6 +9,7 @@ import polars as pl
 import rustworkx as rx
 
 from .agents import Agent
+from .model import ABModel
 
 
 class GraphNode:
@@ -16,17 +17,22 @@ class GraphNode:
     A helper class that allows rustworx to more efficiently store information about Agents in the graph nodes
     """
 
-    def __init__(self, agent: Agent):
+    def __init__(self, agent: Agent) -> None:
+        """
+        :param agent: The Agent object that is being associated with this GraphNode
+        """
         self.index: int
         self.agent: Agent = agent
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"Agent ({self.agent.id}) at graph node ({self.index})"
 
 
 class GraphEdge:
     """
-    A helper class that allows rustworx to more efficiently store information about Agent relationships in the graph edges
+    A helper class that allows rustworx to more efficiently store information about Agent relationships in the graph edges.
+    As the social hierarchies are assumed to be DiGraphs, each GraphEdge is directional, and the social weighting that Agent
+    A places on Agent B will not necessarilly be equally reciprocated.
     """
 
     def __init__(
@@ -35,14 +41,20 @@ class GraphEdge:
         from_node: int,
         to_node: int,
         weighting: float = 0.0,
-    ):
+    ) -> None:
+        """
+        :param hierarchy: The name of the social hierarchy that this edge belongs to
+        :param from_node: The index of the starting node
+        :param to_node: The index of the destination node
+        :param weighting: The opinion weighting that is being assigned
+        """
         self.index: int
         self.weighting: float = weighting
         self.from_node: int = from_node
         self.to_node: int = to_node
         self.hierarchy: str = hierarchy
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"GraphEdge of weight ({self.weighting}) from node ({self.from_node}) to node ({self.to_node}) in the {self.hierarchy} social layer"
 
 
@@ -53,7 +65,10 @@ class Graph:
     with respect to different social hierarchies.
     """
 
-    def __init__(self, name: str):
+    def __init__(self, name: str) -> None:
+        """
+        :param name: The name of the social hierarchy that this Graph object will be representing
+        """
         # Defined as DiGraph as it is common in social networks for relationships to be unidirectional or unbalanced
         self.graph: rx.PyDiGraph = rx.PyDiGraph()
         self.node_count: int = 0
@@ -97,7 +112,7 @@ class Graph:
         """
         return self.graph.edges()[edge_index]
 
-    def update_node_indices(self):
+    def update_node_indices(self) -> None:
         """
         Iterates over all the existing nodes in the graph and updates their stored indices to reflect the current graph state.
         Will also update the graph node_count attribute
@@ -106,7 +121,7 @@ class Graph:
             self.graph[index].index = index
         self.node_count = len(self.graph.nodes())
 
-    def add_nodes(self, agents: Iterable[Agent]):
+    def add_nodes(self, agents: Iterable[Agent]) -> None:
         """
         Creates appropriate GraphNodes from the given Agents, and then adds these to the graph.
 
@@ -120,7 +135,7 @@ class Graph:
         self.graph.add_nodes_from(nodes)
         self.update_node_indices()
 
-    def update_edge_indices(self):
+    def update_edge_indices(self) -> None:
         """
         Iterates over all the existing edges in the graph and updates their stored indices to reflect the current graph state.
         Will also update the graph edge_count attribute
@@ -129,7 +144,7 @@ class Graph:
             data[2].index = index
         self.edge_count = len(self.graph.edges())
 
-    def add_edges(self, edges: dict):
+    def add_edges(self, edges: dict) -> None:
         """
         Creates appropriate GraphEdges from the given dictionary and then adds these to the graph.
 
@@ -254,7 +269,12 @@ class GraphSet:
     and provide utilities using this collection
     """
 
-    def __init__(self, graphs: Iterable[Graph] = []) -> None:
+    def __init__(self, model: ABModel, graphs: Iterable[Graph] = []) -> None:
+        """
+        :param model: The parent ABModel object that this GraphSet is being attached to
+        :param graphs: An optional iterable containing already created Graph objects
+        """
+        self.parent_model: ABModel = model
         self.graphs: pl.Series = pl.Series(values=graphs)
 
     def add_graph(self, graph: Graph) -> None:

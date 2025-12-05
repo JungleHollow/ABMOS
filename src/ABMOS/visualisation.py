@@ -5,6 +5,8 @@ import rustworkx as rx
 from matplotlib import pyplot as plt
 from rustworkx.visualization import mpl_draw
 
+from .model import ABModel
+
 
 class ABVisualiser:
     """
@@ -16,5 +18,6 @@ class ABVisualiser:
         - Per-graph lifetime information
     """
 
-    def __init__(self):
-        self.fig, self.ax = plt.subplots()
+    def __init__(self, model: ABModel) -> None:
+        self.parent_model: ABModel = model
+        self.fig, self.ax = plt.subplots(figsize=(12, 8))
