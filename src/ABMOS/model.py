@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .agent_space import AgentSpace
 from .agents import Agent, AgentSet
 from .graphs import Graph, GraphSet
 from .logging import ABMOSLogger
@@ -12,9 +13,21 @@ class ABModel:
     An agent-based model class that is capable of handling multiple layers that affect agent behaviour.
     """
 
-    def __init__(self, iterations: int = 100):
+    def __init__(
+        self,
+        iterations: int = 100,
+        xlims: tuple[float, float] | None = None,
+        ylims: tuple[float, float] | None = None,
+    ):
         self.graphs: GraphSet = GraphSet()
         self.agents: AgentSet = AgentSet()
+
+        self.agent_space: AgentSpace
+        if xlims is not None and ylims is not None:
+            self.agent_space = AgentSpace(xlims=xlims, ylims=ylims)
+        else:
+            self.agent_space = AgentSpace()
+
         self.logger: ABMOSLogger = ABMOSLogger()
         self.current_iteration: int = 0
         self.max_iterations: int = iterations
@@ -73,11 +86,5 @@ class ABModel:
     def update(self) -> None:
         """
         Updates the agents' internal states to match the model step.
-        """
-        pass
-
-    def visualise(self) -> None:
-        """
-        Visualises the agents' internal states.
         """
         pass
