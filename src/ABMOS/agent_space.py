@@ -45,6 +45,16 @@ class AgentSpace:
         """
         return {"xlims": self.xlims, "ylims": self.ylims}
 
+    def move_agent(self, agent: Agent) -> tuple[float, float]:
+        """
+        A function that determines what a valid movement would be for a given Agent,
+        and returns a tuple with the proposed new coordinates
+
+        :param agent: The Agent that is moving
+        """
+        # TODO: Finish this function
+        pass
+
     def __str__(self) -> str:
         """
         An override to what calling `print()` on this object will output
