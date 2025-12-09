@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Generator, Iterable
 from random import Random
 from typing import Any, override
 
@@ -29,6 +29,9 @@ class Agent:
 
         self.id: int
         self.opinion: float = 0.0
+        self.previous_opinion: float = (
+            0.0  # Used to handle updating during model iterations
+        )
         self.social_weightings: dict[str, float] = {}
         self.personality: str = "neutral"
         self.position: tuple[int, int]
@@ -188,6 +191,12 @@ class AgentSet:
         self.parent_model = model
         self.agents: pl.Series = pl.Series()
         self.random: Random = Random()
+
+    def __iter__(self) -> Generator[Any]:
+        """
+        Override of what calling __iter__ on this object will return
+        """
+        return self.agents.__iter__()
 
     def __len__(self) -> int:
         """

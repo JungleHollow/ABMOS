@@ -84,6 +84,20 @@ class ABModel:
                     )
             self.agents.add(new_agent)
 
+    def iterate(self) -> None:
+        """
+        Handles the main model iteration loop
+        """
+        while self.current_iteration < self.max_iterations:
+            # First each agent looks at its neighbours to see how their opinion will evolve this iterations
+            for agent in self.agents:
+                agent.previous_opinion = agent.opinion
+                collective_changes: list[float] = []
+                for hierarchy in self.graphs:
+                    collective_changes.append(hierarchy.neighbour_influences(agent))
+                total_change: float = sum(collective_changes)
+                agent.opinion += total_change
+
     def step(self) -> None:
         """
         Steps the model forward one iteration.

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import contextlib
-from collections.abc import Iterable
+from collections.abc import Generator, Iterable
 from typing import Any
 
 import numpy as np
@@ -209,6 +209,17 @@ class Graph:
 
         return relationships_dict
 
+    def get_relationship(self, from_node: int, to_node: int) -> float:
+        """
+        Return a directed relationship from one node to another
+
+        :param from_node: The node that the relationship originates from
+        :param to_node: The node that the relationship points to
+        """
+        relationship_dict: dict[int, Any] = self.graph.adj_direction(from_node, False)
+        graph_edge: GraphEdge = relationship_dict[to_node]
+        return graph_edge.weighting
+
     def change_weights(self, node_1: int, node_2: int, value: float) -> None:
         """
         Updates the weight of the relationship between two agents in the graph.
@@ -261,6 +272,26 @@ class Graph:
             if agent == node.agent:
                 return True
         return False
+
+    def neighbour_influences(self, agent: Agent) -> float:
+        """
+        Looks at all the neighbours for an Agent and uses the neighbours' own opinions plus the
+        weight of the relationship between Agents to return a final value by which the given
+        Agent's opinion value will increment or decrement
+
+        :param agent: The Agent for which the strength of opinion change is being determined
+        """
+        agent_hierarchy_weighting: float = agent.social_weightings[self.name]
+        neighbours: rx.NodeIndices = self.graph.neighbors(agent.id)
+        final_change: float = 0.0
+        for neighbour in neighbours:
+            relationship_strength: float = self.get_relationship(agent.id, neighbour)
+            neighbour_node: GraphNode = self.get_node(neighbour)
+            opinion_change: float = (
+                neighbour_node.agent.opinion**relationship_strength
+            ) / (1 - agent_hierarchy_weighting)
+            final_change += opinion_change
+        return final_change
 
     def __str__(self) -> str:
         """
@@ -343,6 +374,12 @@ class GraphSet:
                 if abs(social_weighting) > threshold:
                     significant_hierarchies.append(hierarchy.name)
         return significant_hierarchies
+
+    def __iter__(self) -> Generator[Any]:
+        """
+        An override of what looping over this object will output
+        """
+        return self.graphs.__iter__()
 
     def __str__(self) -> str:
         """
