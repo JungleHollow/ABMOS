@@ -97,10 +97,17 @@ class ABModel:
                     collective_changes.append(hierarchy.neighbour_influences(agent))
                 total_change: float = sum(collective_changes)
                 agent.opinion += total_change
+            self.step()
+            self.update()
+            self.logger.iteration_print(
+                self.current_iteration
+            )  # Does nothing if not at the print interval
+            self.current_iteration += 1
 
     def step(self) -> None:
         """
-        Steps the model forward one iteration.
+        Steps the model forward one iteration. This does not handle agent opinion changes,
+        but rather dynamic agent movement and relationship changes.
         """
         pass
 

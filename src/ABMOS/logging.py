@@ -26,3 +26,16 @@ class ABMOSLogger:
         self.verbose: bool = verbose
         self.print_interval: int = print_interval
         self.write_file: bool = write_file
+
+    def iteration_print(self, current_iteration: int) -> None:
+        """
+        A method which prints out informative model statistics at the appropriate print_interval
+
+        :param current_iteration: The current iteration that the model is at when calling this method
+        """
+        if current_iteration % self.print_interval != 0:
+            return None
+        else:
+            # TODO: Finish this print block
+            pass
+        return None
