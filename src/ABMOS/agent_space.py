@@ -58,6 +58,40 @@ class AgentSpace:
         """
         return {"xlims": self.xlims, "ylims": self.ylims}
 
+    def add_agent(self, x: int, y: int, agent: Agent) -> None:
+        """
+        A function to add an Agent to the AgentSpace object
+
+        :param x: The x coordinate that the Agent is being added to
+        :param y: The y coordinate that the Agent is being added to
+        :param agent: The Agent that is being added to the AgentSpace
+        """
+        if np.count_nonzero(self.space[x, y]) >= self.max_agents_per_grid:
+            print("Attempting to add an Agent to a cell which is already full")
+            return None
+        else:
+            for i in range(self.max_agents_per_grid):
+                if self.space[x, y, i] != 0:
+                    continue
+                else:
+                    self.space[x, y, i] = agent.id
+                    return None
+
+    def remove_agent(self, agent: Agent) -> None:
+        """
+        Remove an Agent from their current coordinates in the AgentSpace and update all appropriate entries
+
+        :param agent: The Agent that will be removed from their coordinates
+        """
+        agent_position: tuple[int, int] = agent.position
+        for i in range(self.max_agents_per_grid):
+            if self.space[agent_position[0], agent_position[1], i] == agent.id:
+                self.space[agent_position[0], agent_position[1], i] = 0
+                agent.position = (0, 0)
+                return None
+            else:
+                continue
+
     def check_neighbours(self, agent: Agent) -> list[int]:
         """
         A function that checks the 8 cells directly adjacent to an agent, and returns a list
@@ -74,9 +108,10 @@ class AgentSpace:
                     continue
                 else:
                     num_neighbours[cell_counter] = np.sum(self.space[i, j])
+                    cell_counter += 1
         return num_neighbours
 
-    def move_agent(self, agent: Agent) -> tuple[int, int]:
+    def generate_move(self, agent: Agent) -> tuple[int, int]:
         """
         A function that determines what a valid movement would be for a given Agent,
         and returns a tuple with the proposed new coordinates
@@ -115,6 +150,19 @@ class AgentSpace:
                 previous_position[0] + move_tuple[0],
                 previous_position[1] + move_tuple[1],
             )
+
+    def move_agent(self, agent: Agent) -> None:
+        """
+        Generate a valid random move for the Agent and move it whilst updating all relevant
+        entries appropriately
+
+        :param agent: The Agent to be moved
+        """
+        new_coordinates: tuple[int, int] = self.generate_move(agent)
+        self.remove_agent(agent)
+        self.add_agent(new_coordinates[0], new_coordinates[1], agent)
+        agent.position = new_coordinates
+        return None
 
     def __str__(self) -> str:
         """
