@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from random import Random
+
+import numpy as np
+
+from .agents import Agent
 from .model import ABModel
 
 
@@ -11,8 +16,8 @@ class AgentSpace:
     def __init__(
         self,
         model: ABModel,
-        xlims: tuple[float, float] = (0.0, 100.0),
-        ylims: tuple[float, float] = (0.0, 100.0),
+        xlims: tuple[int, int] = (0, 100),
+        ylims: tuple[int, int] = (0, 100),
         allow_agent_overlap: bool = True,
         max_agents_per_grid: int = 4,
         agent_sphere_of_influence: float = 1.0,
@@ -32,12 +37,20 @@ class AgentSpace:
             - "continuous" -- A 2-dimensional gridless space in which Agents can be located at any arbitrary point within the axis limits
         """
         self.parent_model: ABModel = model
-        self.xlims: tuple[float, float] = xlims
-        self.ylims: tuple[float, float] = ylims
+        self.xlims: tuple[int, int] = xlims
+        self.ylims: tuple[int, int] = ylims
         self.allow_agent_overlap: bool = allow_agent_overlap
         self.max_agents_per_grid: int = max_agents_per_grid
         self.agent_sphere_of_influence: float = agent_sphere_of_influence
         self.space_type: str = space_type
+        self.space: np.ndarray = np.zeros(
+            (
+                self.xlims[1] - self.xlims[0],
+                self.ylims[1] - self.ylims[0],
+                self.max_agents_per_grid,
+            ),
+            dtype=int,
+        )
 
     def get_limits(self) -> dict[str, tuple[float, float]]:
         """
@@ -45,15 +58,63 @@ class AgentSpace:
         """
         return {"xlims": self.xlims, "ylims": self.ylims}
 
-    def move_agent(self, agent: Agent) -> tuple[float, float]:
+    def check_neighbours(self, agent: Agent) -> list[int]:
+        """
+        A function that checks the 8 cells directly adjacent to an agent, and returns a list
+        of length 8 with the number of neighbours in each cell; left to right, top to bottom.
+
+        :param agent: The Agent for which the neighbours are being checked
+        """
+        num_neighbours = [0 for _ in range(8)]
+        agent_position: tuple[int, int] = agent.position
+        cell_counter: int = 0
+        for i in range(agent_position[0] - 1, agent_position[0] + 2):
+            for j in range(agent_position[1] - 1, agent_position[1] + 2):
+                if i == agent_position[0] and j == agent_position[1]:
+                    continue
+                else:
+                    num_neighbours[cell_counter] = np.sum(self.space[i, j])
+        return num_neighbours
+
+    def move_agent(self, agent: Agent) -> tuple[int, int]:
         """
         A function that determines what a valid movement would be for a given Agent,
         and returns a tuple with the proposed new coordinates
 
         :param agent: The Agent that is moving
         """
-        # TODO: Finish this function
-        pass
+        previous_position: tuple[int, int] = agent.position
+        num_neighbours = self.check_neighbours(agent)
+        possible_moves: list[int] = []
+        for i in range(len(num_neighbours)):
+            if num_neighbours[i] < self.max_agents_per_grid:
+                possible_moves.append(i)
+        if len(num_neighbours) <= 0:
+            return previous_position
+        else:
+            chosen_move = Random.choice(Random(), possible_moves)
+            move_tuple: tuple[int, int] = (0, 0)
+            match chosen_move:
+                case 0:
+                    move_tuple = (-1, -1)
+                case 1:
+                    move_tuple = (0, -1)
+                case 2:
+                    move_tuple = (1, -1)
+                case 3:
+                    move_tuple = (-1, 0)
+                case 4:
+                    move_tuple = (1, 0)
+                case 5:
+                    move_tuple = (-1, 1)
+                case 6:
+                    move_tuple = (0, 1)
+                case 7:
+                    move_tuple = (1, 1)
+            return (
+                previous_position[0] + move_tuple[0],
+                previous_position[1] + move_tuple[1],
+            )
 
     def __str__(self) -> str:
         """
