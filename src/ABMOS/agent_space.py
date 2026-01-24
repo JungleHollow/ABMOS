@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from random import Random
 
 import numpy as np
@@ -67,7 +68,10 @@ class AgentSpace:
         :param agent: The Agent that is being added to the AgentSpace
         """
         if np.count_nonzero(self.space[x, y]) >= self.max_agents_per_grid:
-            print("Attempting to add an Agent to a cell which is already full")
+            warnings.warn(
+                "WARNING: Attempting to add an Agent to a cell which is already full",
+                category=UserWarning,
+            )
             return None
         else:
             for i in range(self.max_agents_per_grid):

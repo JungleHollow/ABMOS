@@ -17,8 +17,8 @@ class ABModel:
     def __init__(
         self,
         iterations: int = 100,
-        xlims: tuple[float, float] | None = None,
-        ylims: tuple[float, float] | None = None,
+        xlims: tuple[int, int] | None = None,
+        ylims: tuple[int, int] | None = None,
     ) -> None:
         """
         :param iterations: The number of iterations that the model will run for

@@ -340,7 +340,7 @@ class GraphSet:
             if graph.name == hierarchy:
                 return graph
 
-        print(f"No graph representing the social hierarchy {hierarchy} was found...")
+        print(f"No graph representing the social hierarchy '{hierarchy}' was found...")
         return None
 
     def list_hierarchies(self, print_out: bool = False) -> list[str]:

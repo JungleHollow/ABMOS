@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Callable, Generator, Iterable
 from random import Random
 from typing import Any, override
@@ -83,9 +84,10 @@ class Agent:
             )
 
         if not overwrite and name in self.__dict__.keys():
-            # Print a warning but do not change any attributes or crash the model if overwriting an existing attribute without meaning to.
-            print(
-                "Attempting to overwrite an existing Agent attribute without meaning to."
+            # Raise a warning but do not change any attributes or crash the model if overwriting an existing attribute without meaning to.
+            warnings.warn(
+                "WARNING: Attempting to overwrite an existing Agent attribute without meaning to.",
+                category=UserWarning,
             )
         else:
             if value:
@@ -108,7 +110,10 @@ class Agent:
         try:
             return self.__dict__[name]
         except KeyError:
-            print("Attempting to get an Agent attribute which doesn't exist.")
+            warnings.warn(
+                "WARNING: Attempting to get an Agent attribute which doesn't exist.",
+                category=UserWarning,
+            )
             return None
 
     def step(self):
