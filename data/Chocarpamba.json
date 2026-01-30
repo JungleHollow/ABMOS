@@ -1,0 +1,174 @@
+{
+  "Q1": {
+    "18-25": 32,
+    "26-35": 40,
+    "36-45": 50,
+    "46-60": 40,
+    "60+": 25
+  },
+  "Q2": {
+    "Femenino": 95,
+    "Masculino": 76,
+    "Otro": 9,
+    "Sin respuesta": 7
+  },
+  "Q3": {
+    "<5": 3,
+    "5-10": 6,
+    "11-20": 16,
+    "20+": 162
+  },
+  "Q4": {
+    "Si": 0,
+    "No": 187
+  },
+  "Q5": {
+    "Mucho": 0,
+    "Algo": 0,
+    "Poco": 30,
+    "Nada": 157
+  },
+  "Q6": {
+    "Mejorado": 0,
+    "Mantenido": 187,
+    "Empeorado": 0
+  },
+  "Q7": {
+    "Significativos": 0,
+    "Leves": 0,
+    "Ningunos": 187
+  },
+  "Q8": {
+    "Siempre": 0,
+    "A veces": 0,
+    "Raramente": 0,
+    "Nunca": 187
+  },
+  "Q9": {
+    "Muchos": 0,
+    "Algunos": 0,
+    "Pocos": 0,
+    "Ningunos": 187
+  },
+  "Q10": {
+    "Muy positivo": 0,
+    "Positivo": 0,
+    "Negativo": 0,
+    "Muy negativo": 187
+  },
+  "Q11": {
+    "Si": 185,
+    "No": 2
+  },
+  "Q12": {
+    "Muy importante": 145,
+    "Importante": 30,
+    "Poco importante": 5,
+    "Nada importante": 7
+  },
+  "Q13": {
+    "Mucho": 0,
+    "Algo": 0,
+    "Poco": 5,
+    "Nada": 182
+  },
+  "Q14": {
+    "A favor": 0,
+    "En contra": 135,
+    "Neutral": 28,
+    "Sin respuesta": 15,
+    "Sin saber": 9
+  },
+  "Q15": {
+    "Siempre": 156,
+    "A veces": 18,
+    "Rara vez": 8,
+    "Nunca": 5
+  },
+  "Q16": {
+    "Si": 155,
+    "No": 20,
+    "Depende": 12
+  },
+  "Q17": {
+    "Ambiental": 170,
+    "Economicos": 0,
+    "Comunidad": 12,
+    "Religion": 5,
+    "Personal": 0
+  },
+  "Q18": {
+    "Totalmente": 0,
+    "Parcialmente": 1,
+    "Poco": 8,
+    "Nada": 178
+  },
+  "Q19": {
+    "Si": 138,
+    "No": 44,
+    "Sin saber": 5
+  },
+  "Q20": {
+    "Si": 81,
+    "No": 42,
+    "Tal vez": 64
+  },
+  "Q21": {
+    "Si": 110,
+    "No": 77
+  },
+  "Q22": {
+    "Futbol": 82,
+    "Basquet": 72,
+    "Voley": 31,
+    "Atletismo": 2
+  },
+  "Q23": {
+    "Local": 2,
+    "Nacional": 8,
+    "Internacional": 72,
+    "No sigue futbol": 105
+  },
+  "Q24": {
+    "Siempre": 81,
+    "A veces": 10,
+    "Raramente": 25,
+    "Nunca": 71
+  },
+  "Q25": {
+    "Familia": 74,
+    "Amigos": 78,
+    "Comunidad": 23,
+    "Solo": 12
+  },
+  "Q26": {
+    "Mucho": 115,
+    "Algo": 28,
+    "Poco": 32,
+    "Nada": 12
+  },
+  "Q27": {
+    "Si": 165,
+    "No": 22
+  },
+  "Q28": {
+    "Festividades": 75,
+    "Religiosos": 45,
+    "Deportivos": 25,
+    "Comunitarios": 32,
+    "Ninguna": 10
+  },
+  "Q29": {
+    "Tradicional": 112,
+    "Popular": 45,
+    "Religiosa": 20,
+    "Internacional": 4,
+    "Variada": 6
+  },
+  "Q30": {
+    "Frecuentemente": 145,
+    "Ocasionalmente": 32,
+    "Raramente": 6,
+    "Nunca": 4
+  }
+}
