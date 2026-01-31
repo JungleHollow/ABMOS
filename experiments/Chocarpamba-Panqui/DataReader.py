@@ -57,23 +57,40 @@ class DataReader:
         """
         Calculates the influence of each social hierarchy for each agent
         """
+        general_column: pl.Series | None = self.social_df.get_column(
+            "General", default=None
+        )
+        if general_column is not None:
+            for hierarchy in set(
+                list(general_column)
+            ):  # set() to reduce the number that will be iterated over
+                if hierarchy not in self.initial_hierarchies:
+                    self.initial_hierarchies.append(hierarchy)
+
+        for agent_row in self.social_df.iter_rows(named=True):
+            hierarchy_effects: dict = {"AgenteId": agent_row["AgenteId"]}
+            for hierarchy in self.initial_hierarchies:
+                hierarchy_effects[hierarchy] = (
+                    0.0  # Initialise each hierarchy effect, even if not explicitly seen in the current agent row
+                )
+
+            for key, value in agent_row:
+                if key == "AgenteId":
+                    continue
+                elif key == "General":
+                    pass
+                else:
+                    hierarchy_name: str = key.split("_")[0]
+                    # TODO: CONTINUE FROM HERE TO FINISH THIS FUNCTION
+
+    def create_model_agents(self):
+        """
+        Uses agents_df and the extracted hierarchy influences to create Agent objects for the ABModel
+        """
         pass
 
-    def agent_most_influential_hierarchy(self, agent_id: str) -> tuple[str, float]:
-        """
-        If a 'general' column exists in social_df, will use this to determine the most influencial social hierarchy
-        for each agent, and add the hierarchy to initial_hierarchies if it is not already present
-        """
-        pass
-        
-    def create_model_agents(self):
-        '''
-        Uses agents_df and the extracted hierarchy influences to create Agent objects for the ABModel
-        '''
-        pass
-        
     def create_model_graphs(self):
-        '''
+        """
         Uses initial_hierarchies and the extracted hierarchy influences to create Graph objects with the appropriate GraphNodes
-        '''
+        """
         pass
