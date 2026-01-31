@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-import typing
+from typing import Any
 
 import polars as pl
+
+from src.ABMOS.agents import Agent, AgentSet
+from src.ABMOS.graphs import Graph, GraphEdge, GraphNode, GraphSet
+from src.ABMOS.model import ABModel
 
 
 class DataReader:
@@ -17,14 +21,59 @@ class DataReader:
         initial_hierarchies: list[str],
         social_path: str,
         opinions_path: str | None = None,
+        iterations: int = 100,
+        xlims: tuple[int, int] | None = None,
+        ylims: tuple[int, int] | None = None,
     ):
         """
         :param agents_path: A relative or absolute file path to a CSV file containing relevant data on model agent characteristics
         :param initial_hierarchies: A list of the social hierarchies that will be present in the initial data passed to the reader
         :param social_path: A relative or absolute file path to a CSV file containing relevant data on the relative influence of the existing social hierarchies in the community
         :optional param opinions_path: A relative or absolute file path to a CSV file containing the dependant variables of actual agent opinions; used to compare model accuracy after execution
+        :optional param iterations: The number of iterations that the ABModel will be run for
+        :optional param xlims: The x-axis boundaries of the agent space within the ABModel
+        :optional param ylims: The y-axis boundaries of the agent space within the ABModel
         """
         self.agents_path: str = agents_path
+        self.agents_df: pl.DataFrame
         self.initial_hierarchies: list[str] = initial_hierarchies
         self.social_path: str = social_path
+        self.social_df: pl.DataFrame
         self.opinions_path: str | None = opinions_path
+        self.opinions_df: pl.DataFrame
+
+        with open(self.agents_path, "r") as file:
+            self.agents_df = pl.read_csv(file)
+        with open(self.social_path, "r") as file:
+            self.social_df = pl.read_csv(file)
+
+        if self.opinions_path:
+            with open(self.opinions_path, "r") as file:
+                self.opinions_df = pl.read_csv(file)
+
+        self.model: ABModel = ABModel(iterations=iterations, xlims=xlims, ylims=ylims)
+
+    def extract_hierarchy_influences(self):
+        """
+        Calculates the influence of each social hierarchy for each agent
+        """
+        pass
+
+    def agent_most_influential_hierarchy(self, agent_id: str) -> tuple[str, float]:
+        """
+        If a 'general' column exists in social_df, will use this to determine the most influencial social hierarchy
+        for each agent, and add the hierarchy to initial_hierarchies if it is not already present
+        """
+        pass
+        
+    def create_model_agents(self):
+        '''
+        Uses agents_df and the extracted hierarchy influences to create Agent objects for the ABModel
+        '''
+        pass
+        
+    def create_model_graphs(self):
+        '''
+        Uses initial_hierarchies and the extracted hierarchy influences to create Graph objects with the appropriate GraphNodes
+        '''
+        pass
