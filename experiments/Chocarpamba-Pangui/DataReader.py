@@ -37,6 +37,7 @@ class DataReader:
         self.agents_path: str = agents_path
         self.agents_df: pl.DataFrame
         self.initial_hierarchies: list[str] = initial_hierarchies
+        self.hierarchy_influences: dict[str, dict] = {}
         self.social_path: str = social_path
         self.social_df: pl.DataFrame
         self.opinions_path: str | None = opinions_path
@@ -68,7 +69,7 @@ class DataReader:
                     self.initial_hierarchies.append(hierarchy)
 
         for agent_row in self.social_df.iter_rows(named=True):
-            hierarchy_effects: dict = {"AgenteId": agent_row["AgenteId"]}
+            hierarchy_effects: dict = {}
             for hierarchy in self.initial_hierarchies:
                 hierarchy_effects[hierarchy] = (
                     0.0  # Initialise each hierarchy effect, even if not explicitly seen in the current agent row
@@ -84,11 +85,15 @@ class DataReader:
                     hierarchy_name: str = key.split("_")[0]
                     if hierarchy_name not in raw_hierarchy_values.keys():
                         raw_hierarchy_values[hierarchy_name] = []
-                    raw_hierarchy_values[hierarchy_name].append(int(value))
+                    raw_hierarchy_values[hierarchy_name].append(abs(int(value)))
             
             for key, value in raw_hierarchy_values:
-                
+                sum_values: int = sum(value)
+                averaged_sum: float = sum_values / len(value)
+                final_effect: float = averaged_sum / 10.0
+                hierarchy_effects[key] = final_effect
                     
+            self.hierarchy_influences[agent_row["AgenteId"]] = hierarchy_effects
 
     def create_model_agents(self):
         """
