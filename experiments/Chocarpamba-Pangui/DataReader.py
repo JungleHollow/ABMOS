@@ -74,14 +74,21 @@ class DataReader:
                     0.0  # Initialise each hierarchy effect, even if not explicitly seen in the current agent row
                 )
 
+            raw_hierarchy_values: dict = {}
             for key, value in agent_row:
                 if key == "AgenteId":
                     continue
                 elif key == "General":
-                    pass
+                    hierarchy_effects[value] = 1.0  # Placeholder of 1.0 strength for the moment
                 else:
                     hierarchy_name: str = key.split("_")[0]
-                    # TODO: CONTINUE FROM HERE TO FINISH THIS FUNCTION
+                    if hierarchy_name not in raw_hierarchy_values.keys():
+                        raw_hierarchy_values[hierarchy_name] = []
+                    raw_hierarchy_values[hierarchy_name].append(int(value))
+            
+            for key, value in raw_hierarchy_values:
+                
+                    
 
     def create_model_agents(self):
         """
