@@ -1,0 +1,175 @@
+{
+  "Q1": {
+    "18-25": 1,
+    "26-35": 2,
+    "36-45": 3,
+    "46-60": 4,
+    "60+": 5
+  },
+  "Q2": {
+    "Female": 1,
+    "Male": 2,
+    "Other": 3,
+    "No response": 4
+  },
+  "Q3": {
+    "<5": 1,
+    "5-10": 2,
+    "11-20": 3,
+    "20+": 4
+  },
+  "Q4": {
+    "Yes": 1,
+    "No": 0
+  },
+  "Q5": {
+    "A lot": 3,
+    "Moderately": 2,
+    "A little": 1,
+    "Not at all": 0
+  },
+  "Q6": {
+    "Improved": 1,
+    "Maintained": 0,
+    "Worsensed": -1
+  },
+  "Q7": {
+    "Significant": -2,
+    "Slight": -1,
+    "None": 0
+  },
+  "Q8": {
+    "Always": -2,
+    "Sometimes": -1,
+    "Rarely": 0,
+    "Never": 1
+  },
+  "Q9": {
+    "Many": 3,
+    "Some": 2,
+    "A few": 1,
+    "None": 0
+  },
+  "Q10": {
+    "Very positive": 2,
+    "Positive": 1,
+    "Negative": -1,
+    "Very negative": -2
+  },
+  "Q11": {
+    "Yes": 1,
+    "No": 0
+  },
+  "Q12": {
+    "Very important": 3,
+    "Important": 2,
+    "Somewhat important": 1,
+    "Not important": 0
+  },
+  "Q13": {
+    "A lot": 3,
+    "Moderately": 2,
+    "A little": 1,
+    "Not at all": 0
+  },
+  "Q14": {
+    "In favour": 1,
+    "Against": -1,
+    "Neutral": 0,
+    "No opinion": 0,
+    "Unsure": 0
+  },
+  "Q15": {
+    "Always": 3,
+    "Sometimes": 2,
+    "Rarely": 1,
+    "Never": 0
+  },
+  "Q16": {
+    "Yes": 1,
+    "No": 0,
+    "Depends": 0.5
+  },
+  "Q17": {
+    "Environmental imapct": "Environmental",
+    "Economico benefits": "Economic",
+    "Community opinion": "Community",
+    "Religious beliefs": "Religious",
+    "Personal experience": "Personal"
+  },
+  "Q18": {
+    "Totally compatible": 1,
+    "Partially compatible": 0.5,
+    "A little compatible": 0,
+    "Incompatible": -1
+  },
+  "Q19": {
+    "Yes": 1,
+    "No": 0,
+    "Unsure": 0.5
+  },
+  "Q20": {
+    "Yes": 1,
+    "No": 0,
+    "Maybe": 0.5
+  },
+  "Q21": {
+    "Yes": 1,
+    "No": 0
+  },
+  "Q22": {
+    "Football": 1,
+    "Basketball": 2,
+    "Voleyball": 3,
+    "Athletics": 4,
+    "Other": 5
+  },
+  "Q23": {
+    "Local team": 3,
+    "National team": 2,
+    "International team": 1,
+    "Does not follow football": 0
+  },
+  "Q24": {
+    "Always": 3,
+    "Sometimes": 2,
+    "Rarely": 1,
+    "Never": 0
+  },
+  "Q25": {
+    "Family": 1,
+    "Friends": 2,
+    "Neighbours": 3,
+    "Alone": 0
+  },
+  "Q26": {
+    "A lot": 3,
+    "Moderately": 2,
+    "A little": 1,
+    "Not at all": 0
+  },
+  "Q27": {
+    "Yes": 1,
+    "No": 0
+  },
+  "Q28": {
+    "Local festivities": 1,
+    "Religious events": 2,
+    "Sports events": 3,
+    "Community meetings": 4,
+    "None": 0
+  },
+  "Q29": {
+    "Traditional music": 1,
+    "Popular music": 2,
+    "Religious music": 3,
+    "International music": 4,
+    "Varied": 5
+  },
+  "Q30": {
+    "Frequently": 3,
+    "Occasionally": 2,
+    "Rarely": 1,
+    "Never": 0
+  }
+}
