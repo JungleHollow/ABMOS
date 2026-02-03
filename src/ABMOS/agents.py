@@ -19,16 +19,16 @@ class Agent:
     def __init__(self, *args, **kwargs) -> None:
         """
         Supported positional arguments:
+            - <string> to set the Agent's id
             - <dict> of {hierarchy_name : weight} for the personal value that this Agent assigns to each social hierarchy
             - <float> in the range [-1, 1] to set the Agent's initial opinion on the topic of interest
             - (x, y) for the initial position of the Agent
-            - <string> to define the Agent's personality (i.e. "Rational", "Erratic", "Impulsive", etc...)
 
         :param args: positional arguments that can be passed to each Agent
         :param kwargs: keyword arguments that can be passed to each Agent
         """
 
-        self.id: int
+        self.id: str
         self.opinion: float = 0.0
         self.previous_opinion: float = (
             0.0  # Used to handle updating during model iterations
@@ -48,7 +48,7 @@ class Agent:
                     case tuple():
                         self.add_attribute("position", arg)
                     case str():
-                        self.add_attribute("personality", arg)
+                        self.id = arg
 
         if kwargs:
             for key, value in kwargs.items():

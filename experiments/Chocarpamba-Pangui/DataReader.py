@@ -36,12 +36,19 @@ class DataReader:
         """
         self.agents_path: str = agents_path
         self.agents_df: pl.DataFrame
+        self.base_hierarchies: list[str] = [
+            "Age",
+            "Gender",
+            "Location",
+        ]  # Predefined social hierarchies that should always be present in the data
         self.initial_hierarchies: list[str] = initial_hierarchies
         self.hierarchy_influences: dict[str, dict] = {}
         self.social_path: str = social_path
         self.social_df: pl.DataFrame
         self.opinions_path: str | None = opinions_path
         self.opinions_df: pl.DataFrame
+        self.agent_objects: list[Agent]
+        self.graph_objects: list[Graph]
 
         with open(self.agents_path, "r") as file:
             self.agents_df = pl.read_csv(file)
@@ -80,29 +87,68 @@ class DataReader:
                 if key == "AgenteId":
                     continue
                 elif key == "General":
-                    hierarchy_effects[value] = 1.0  # Placeholder of 1.0 strength for the moment
+                    hierarchy_effects[value] = (
+                        1.0  # Placeholder of 1.0 strength for the moment
+                    )
                 else:
                     hierarchy_name: str = key.split("_")[0]
                     if hierarchy_name not in raw_hierarchy_values.keys():
                         raw_hierarchy_values[hierarchy_name] = []
                     raw_hierarchy_values[hierarchy_name].append(abs(int(value)))
-            
+
             for key, value in raw_hierarchy_values:
                 sum_values: int = sum(value)
                 averaged_sum: float = sum_values / len(value)
                 final_effect: float = averaged_sum / 10.0
                 hierarchy_effects[key] = final_effect
-                    
+
             self.hierarchy_influences[agent_row["AgenteId"]] = hierarchy_effects
 
     def create_model_agents(self):
         """
         Uses agents_df and the extracted hierarchy influences to create Agent objects for the ABModel
         """
-        pass
+        self.agent_objects = []
+        for key, value in self.hierarchy_influences.items():
+            new_agent: Agent = Agent(
+                key, value
+            )  # This should create an Agent with id <key> and social_weightings <value>
+            self.agent_objects.append(new_agent)
+        self.model.add_agents(self.agent_objects)
+        self.create_initial_graphs()
+
+    def create_initial_graphs(self):
+        """
+        Uses the available agent information to generate the initial basic graphs for the model (Age, Gender, Time in community, etc...)
+        """
+        self.graph_objects = []
+        for hierarchy in self.base_hierarchies:
+            new_graph = Graph(hierarchy)
+            new_graph.add_nodes(self.agent_objects)
+            graph_edges: dict = {"from_node": [], "to_node": [], "weighting": []}
+            for i in range(new_graph.node_count):
+                for j in range(new_graph.node_count):
+                    if i == j:
+                        continue
+                    else:
+                        node_i = new_graph.get_node(i)
+                        node_j = new_graph.get_node(j)
+                        # TODO: FINISH THIS FUNCTION
 
     def create_model_graphs(self):
         """
         Uses initial_hierarchies and the extracted hierarchy influences to create Graph objects with the appropriate GraphNodes
         """
-        pass
+        for hierarchy in self.initial_hierarchies:
+            new_graph = Graph(hierarchy)
+            new_graph.add_nodes(self.agent_objects)
+            graph_edges: dict = {"from_node": [], "to_node": [], "weighting": []}
+            for i in range(new_graph.node_count):
+                for j in range(new_graph.node_count):
+                    if i == j:
+                        continue
+                    else:
+                        # Check for and create all appropriate graph edges between nodes
+                        node_i = new_graph.get_node(i)
+                        node_j = new_graph.get_node(j)
+                        # TODO: FINISH THIS FUNCTION

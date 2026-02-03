@@ -7,10 +7,10 @@
     "60+": 25
   },
   "Q2": {
-    "Femenino": 95,
-    "Masculino": 76,
-    "Otro": 9,
-    "Sin respuesta": 7
+    "Female": 95,
+    "Male": 76,
+    "Other": 9,
+    "No response": 7
   },
   "Q3": {
     "<5": 3,
@@ -19,156 +19,156 @@
     "20+": 162
   },
   "Q4": {
-    "Si": 0,
+    "Yes": 0,
     "No": 187
   },
   "Q5": {
-    "Mucho": 0,
-    "Algo": 0,
-    "Poco": 30,
-    "Nada": 157
+    "A lot": 0,
+    "Moderately": 0,
+    "A little": 30,
+    "Not at all": 157
   },
   "Q6": {
-    "Mejorado": 0,
-    "Mantenido": 187,
-    "Empeorado": 0
+    "Improved": 0,
+    "Maintained": 187,
+    "Worsened": 0
   },
   "Q7": {
-    "Significativos": 0,
-    "Leves": 0,
-    "Ningunos": 187
+    "Significant": 0,
+    "Slight": 0,
+    "None": 187
   },
   "Q8": {
-    "Siempre": 0,
-    "A veces": 0,
-    "Raramente": 0,
-    "Nunca": 187
+    "Always": 0,
+    "Sometimes": 0,
+    "Rarely": 0,
+    "Never": 187
   },
   "Q9": {
-    "Muchos": 0,
-    "Algunos": 0,
-    "Pocos": 0,
-    "Ningunos": 187
+    "Many": 0,
+    "Some": 0,
+    "A few": 0,
+    "None": 187
   },
   "Q10": {
-    "Muy positivo": 0,
-    "Positivo": 0,
-    "Negativo": 0,
-    "Muy negativo": 187
+    "Very positive": 0,
+    "Positive": 0,
+    "Negative": 0,
+    "Very negative": 187
   },
   "Q11": {
-    "Si": 185,
+    "Yes": 185,
     "No": 2
   },
   "Q12": {
-    "Muy importante": 145,
-    "Importante": 30,
-    "Poco importante": 5,
-    "Nada importante": 7
+    "Very important": 145,
+    "Important": 30,
+    "Somewhat important": 5,
+    "Not important": 7
   },
   "Q13": {
-    "Mucho": 0,
-    "Algo": 0,
-    "Poco": 5,
-    "Nada": 182
+    "A lot": 0,
+    "Moderately": 0,
+    "A little": 5,
+    "Not at all": 182
   },
   "Q14": {
-    "A favor": 0,
-    "En contra": 135,
+    "In favour": 0,
+    "Against": 135,
     "Neutral": 28,
-    "Sin respuesta": 15,
-    "Sin saber": 9
+    "No opinion": 15,
+    "Unsure": 9
   },
   "Q15": {
-    "Siempre": 156,
-    "A veces": 18,
-    "Rara vez": 8,
-    "Nunca": 5
+    "Always": 156,
+    "Sometimes": 18,
+    "Rarely": 8,
+    "Never": 5
   },
   "Q16": {
-    "Si": 155,
+    "Yes": 155,
     "No": 20,
-    "Depende": 12
+    "Depends": 12
   },
   "Q17": {
-    "Ambiental": 170,
-    "Economicos": 0,
-    "Comunidad": 12,
-    "Religion": 5,
-    "Personal": 0
+    "Environmental impact": 170,
+    "Economic benefits": 0,
+    "Community opinion": 12,
+    "Religious beliefs": 5,
+    "Personal experience": 0
   },
   "Q18": {
-    "Totalmente": 0,
-    "Parcialmente": 1,
-    "Poco": 8,
-    "Nada": 178
+    "Totally comaptible": 0,
+    "Partially compatible": 1,
+    "A little compatible": 8,
+    "Incompatible": 178
   },
   "Q19": {
-    "Si": 138,
+    "Yes": 138,
     "No": 44,
-    "Sin saber": 5
+    "Unsure": 5
   },
   "Q20": {
-    "Si": 81,
+    "Yes": 81,
     "No": 42,
-    "Tal vez": 64
+    "Maybe": 64
   },
   "Q21": {
-    "Si": 110,
+    "Yes": 110,
     "No": 77
   },
   "Q22": {
-    "Futbol": 82,
-    "Basquet": 72,
-    "Voley": 31,
-    "Atletismo": 2
+    "Football": 82,
+    "Basketball": 72,
+    "Voleyball": 31,
+    "Athletics": 2
   },
   "Q23": {
-    "Local": 2,
-    "Nacional": 8,
-    "Internacional": 72,
-    "No sigue futbol": 105
+    "Local team": 2,
+    "National team": 8,
+    "International team": 72,
+    "Does not follow football": 105
   },
   "Q24": {
-    "Siempre": 81,
-    "A veces": 10,
-    "Raramente": 25,
-    "Nunca": 71
+    "Always": 81,
+    "Sometimes": 10,
+    "Rarely": 25,
+    "Never": 71
   },
   "Q25": {
-    "Familia": 74,
-    "Amigos": 78,
-    "Comunidad": 23,
-    "Solo": 12
+    "Family": 74,
+    "Friends": 78,
+    "Neighbours": 23,
+    "Alone": 12
   },
   "Q26": {
-    "Mucho": 115,
-    "Algo": 28,
-    "Poco": 32,
-    "Nada": 12
+    "A lot": 115,
+    "Moderately": 28,
+    "A little": 32,
+    "Not at all": 12
   },
   "Q27": {
-    "Si": 165,
+    "Yes": 165,
     "No": 22
   },
   "Q28": {
-    "Festividades": 75,
-    "Religiosos": 45,
-    "Deportivos": 25,
-    "Comunitarios": 32,
-    "Ninguna": 10
+    "Local festivities": 75,
+    "Religious events": 45,
+    "Sports events": 25,
+    "Community meetings": 32,
+    "None": 10
   },
   "Q29": {
-    "Tradicional": 112,
-    "Popular": 45,
-    "Religiosa": 20,
-    "Internacional": 4,
-    "Variada": 6
+    "Traditional music": 112,
+    "Popular music": 45,
+    "Religious music": 20,
+    "International music": 4,
+    "Varied": 6
   },
   "Q30": {
-    "Frecuentemente": 145,
-    "Ocasionalmente": 32,
-    "Raramente": 6,
-    "Nunca": 4
+    "Frequently": 145,
+    "Occasionally": 32,
+    "Rarely": 6,
+    "Never": 4
   }
 }
