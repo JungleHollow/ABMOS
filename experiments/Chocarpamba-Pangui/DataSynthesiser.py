@@ -1,3 +1,4 @@
+import argparse
 import json
 import random
 
@@ -55,3 +56,29 @@ class DataSynthesiser:
 
     def write_csv(self):
         self.output_dataframe.write_csv(self.output_path)
+
+
+class SynthesiserArgParser:
+    def __init__(self):
+        self.parser: argparse.ArgumentParser = argparse.ArgumentParser(
+            prog="ABMOS DataSynthesiser",
+            description="Create synthetic data from observed distributions for use with the ABMOS library",
+        )
+        self.parser.add_argument("response_file", type=str)
+        self.parser.add_argument("output_path", type=str)
+        self.parser.add_argument("-c", "--community_code", default="FALSE", type=str)
+        self.parser.add_argument("-n", "--num_entries", default=100, type=int)
+        self.main()
+
+    def main(self):
+        args: argparse.Namespace = self.parser.parse_args()
+        data_synthesiser: DataSynthesiser = DataSynthesiser(
+            args.response_file, args.output_path, args.community_code
+        )
+        data_synthesiser.generate_n_entries(args.num_entries)
+        data_synthesiser.create_dataframe()
+        data_synthesiser.write_csv()
+
+
+if __name__ == "__main__":
+    parser: SynthesiserArgParser = SynthesiserArgParser()
