@@ -7,7 +7,11 @@ import polars as pl
 
 class DataSynthesiser:
     def __init__(
-        self, response_file: str, output_path: str, community_code: str = "FALSE"
+        self,
+        response_file: str,
+        output_path: str,
+        community_code: str = "FALSE",
+        social_graphs: list[str] = ["Age", "Family", "Friends", "Religion", "Cultural"],
     ):
         self.response_file: str = response_file
         self.output_path: str = output_path
@@ -40,13 +44,56 @@ class DataSynthesiser:
             agent_id: str = f"{self.community_code}{self.num_synthetic_entries:05}"
             self.output_dict["AgentId"].append(agent_id)
 
+            is_religious: bool = False
+            participates_community: bool = False
+
             for question, responses in self.response_distribution.items():
                 choices: list[str] = list(responses.keys())
                 weights: list[int] = list(responses.values())
-                generated_response: str = random.choices(choices, weights=weights, k=1)[
-                    0
-                ]
+                generated_response: str = ""
+
+                match question:
+                    case "Q11":
+                        generated_response = random.choices(
+                            choices, weights=weights, k=1
+                        )[0]
+                        if generated_response == "Yes":
+                            is_religious = True
+                    case "Q12":
+                        if is_religious:
+                            generated_response = random.choices(
+                                choices[:-1], weights=weights[:-1], k=1
+                            )[0]
+                        else:
+                            generated_response = "Not important"
+                    case "Q27":
+                        generated_response = random.choices(
+                            choices, weights=weights, k=1
+                        )[0]
+                        if generated_response == "Yes":
+                            participates_community = True
+                    case "Q30":
+                        if participates_community:
+                            generated_response = random.choices(
+                                choices[:2], weights=weights[:2], k=1
+                            )[0]
+                        else:
+                            generated_response = random.choices(
+                                choices[2:], weights=weights[2:], k=1
+                            )[0]
+                    case _:
+                        generated_response = random.choices(
+                            choices, weights=weights, k=1
+                        )[0]
+
                 self.output_dict[question].append(generated_response)
+        self.generate_relationships()
+
+    def generate_relationships(self):
+        """
+        Randomly generate the social hierarchy relationships for the agents based on assumptions and other responses
+        """
+        pass
 
     def create_dataframe(self):
         """
