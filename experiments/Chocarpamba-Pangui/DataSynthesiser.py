@@ -10,12 +10,20 @@ class DataSynthesiser:
         self,
         response_file: str,
         output_path: str,
+        survey_values: str,
         community_code: str = "FALSE",
         social_graphs: list[str] = ["Age", "Family", "Friends", "Religion", "Cultural"],
     ):
         self.response_file: str = response_file
         self.output_path: str = output_path
+        self.values_path: str = survey_values
         self.community_code: str = community_code
+
+        self.social_graphs: list[str] = social_graphs
+
+        self.survey_values: dict
+        with open(self.values_path, "r") as file:
+            self.survey_values = json.load(file)
 
         self.response_distribution: dict
         with open(self.response_file, "r") as file:
@@ -27,6 +35,10 @@ class DataSynthesiser:
 
         self.output_dataframe: pl.DataFrame
         self.output_dict: dict = {"AgentId": []}
+
+        self.output_relationships: dict = {
+            hierarchy: [] for hierarchy in self.social_graphs
+        }  # Will be lists of (start_node, end_node, weight) triples
 
         for question in self.response_distribution.keys():
             self.output_dict[question] = []
@@ -87,13 +99,50 @@ class DataSynthesiser:
                         )[0]
 
                 self.output_dict[question].append(generated_response)
+        self.create_dataframe()
         self.generate_relationships()
 
     def generate_relationships(self):
         """
         Randomly generate the social hierarchy relationships for the agents based on assumptions and other responses
         """
-        pass
+
+        for i in self.output_dataframe.iter_rows(named=True):
+            for hierarchy in self.social_graphs:
+                weight: float  # define but don't initialise the weight variable
+                
+                match hierarchy:
+                    case "Age":
+                        for j in self.output_dataframe.iter_rows(named=True):
+                            if j["AgentId"] == i["AgentId"]:
+                                continue
+                            else:
+                                weight = 1.0 - (0.25 * abs(self.survey_values["Q1"][i["Q1"]] - self.survey_values["Q1"][j["Q1"]]))
+                                self.output_relationships["Age"].append((i["AgentId"], j["AgentId"], weight))
+                    case "Family":
+                        pass
+                    case "Friends":
+                        pass
+                    case "Religion":
+                        if i["Q11"] == "No":
+                            continue
+                        else:
+                            for j in self.output_dataframe.iter_rows(named=True):
+                                if j["Q11"] == "No":
+                                    continue
+                                else:
+                                    weight = (
+                                        self.survey_values["Q12"][i["Q12"]] + 
+                                        self.survey_values["Q13"][i["Q13"]] +
+                                        self.survey_values["Q14"][i["Q14"]] +
+                                        self.survey_values["Q15"][i["Q15"]] +
+                                        self.survey_values["Q16"][i["Q16"]]
+                                    ) / 11.0  # 11.0 is the maximum possible score for these questions
+                                    self.output_relationships["Religion"].append((i["AgentId"], j["AgentId"], weight))
+                    case "Cultural":
+                        pass
+                    case _:
+                        pass
 
     def create_dataframe(self):
         """
@@ -115,15 +164,23 @@ class SynthesiserArgParser:
         self.parser.add_argument("output_path", type=str)
         self.parser.add_argument("-c", "--community_code", default="FALSE", type=str)
         self.parser.add_argument("-n", "--num_entries", default=100, type=int)
+        self.parser.add_argument(
+            "-s",
+            "--social_graphs",
+            default=["Age", "Family", "Friends", "Religion", "Cultural"],
+            type=list,
+        )
         self.main()
 
     def main(self):
         args: argparse.Namespace = self.parser.parse_args()
         data_synthesiser: DataSynthesiser = DataSynthesiser(
-            args.response_file, args.output_path, args.community_code
+            args.response_file,
+            args.output_path,
+            args.community_code,
+            args.social_graphs,
         )
         data_synthesiser.generate_n_entries(args.num_entries)
-        data_synthesiser.create_dataframe()
         data_synthesiser.write_csv()
 
 
