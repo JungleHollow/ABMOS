@@ -3,6 +3,11 @@ from __future__ import annotations
 import os
 import random as rd
 from copy import deepcopy
+
+from multiprocessing import Pool
+# For type checking
+from multiprocessing.pool import Pool as WorkerPool
+
 from typing import TypedDict
 
 import numpy as np
@@ -208,8 +213,218 @@ class InfluentialTester:
 
         return created_hi_agents
 
+    def create_li_graphs(
+        self,
+        hierarchies: list[str],
+        rw_distributions: list[tuple[float, float]],
+        agents: list[agt.Agent],
+    ) -> list[gr.Graph]:
+        """
+        Creates the graphs for the LI model.
+
+        For the purposes of this experiment, each graph contains all agents in the population,
+        and the relationships are created following a customised scale-free methodology.
+
+        :param hierarchies: The hierarchies that all graphs should represent.
+        :type hierarchies: list[str]
+        :param rw_distributions: The random walk distribution parameters for each social hierarchy.
+        :type rw_distributions: list[tuple[float, float]]
+        :param agents: The population of agents from which the graphs will be constructed.
+        :type agents: list[Agent]
+        :return: The created graph objects.
+        :rtype: list[Graph]
+        """
+        created_li_graphs: list[gr.Graph] = []
+
+        # Create a set of the agent indices to be used later in iteration
+        agent_indices: set[int] = {i for i in range(len(agents))}
+
+        # The valid range of relationship strengths originating from noninfluential agents
+        noninf_rel_range: tuple[float, float] = AGENT_CHARACTERISTICS["relationship"]
+
+        for idx, hierarchy in enumerate(hierarchies):
+            graph: gr.Graph = gr.Graph(hierarchy, rw_distributions[idx])
+
+            # Initialise the graph nodes using the population of agents
+            graph.add_nodes(deepcopy(agents))
+
+            new_edges: dict[str, list[int | float]] = {
+                "from_node": [],
+                "to_node": [],
+                "weighting": [],
+            }
+
+            for agent_node in graph.graph.nodes():
+                # Return a filtered list including all agent indices except for the current node
+                valid_indices: list[int] = list(agent_indices ^ {agent_node.index})
+
+                selected_indices: list[int] = list(
+                    np.random.choice(
+                        valid_indices,
+                        size=AGENT_CHARACTERISTICS["non_influential_connectivity"],
+                        replace=False,
+                    )
+                )
+
+                for selected_index in selected_indices:
+                    edge_weighting: float = rd.uniform(noninf_rel_range[0], noninf_rel_range[1])
+
+                    # Flip the to_ and from_ indices to make the weighting representative of the impact that agent_node has on others.
+                    new_edges["from_node"].append(selected_index)
+                    new_edges["to_node"].append(agent_node.index)
+                    new_edges["weighting"].append(edge_weighting)
+
+            graph.add_edges(new_edges)
+            created_li_graphs.append(graph)
+
+        return created_li_graphs
+
+    def create_hi_graphs(
+        self,
+        hierarchies: list[str],
+        rw_distributions: list[tuple[float, float]],
+        agents: list[agt.Agent],
+    ) -> list[gr.Graph]:
+        """
+        Creates the graphs for the HI model.
+
+        For the purposes of this experiment, each graph contains all agents in the population,
+        and the relationships are created following a customised scale-free methodology.
+
+        :param hierarchies: The hierarchies that all of the created graphs should represent.
+        :type hierarchies: list[str]
+        :param rw_distributions: The random walk parameters for each social hierarchy.
+        :type rw_distributions: list[tuple[float, float]]
+        :param agents: The population of agents from which the graphs will be constructed.
+        :type agents: list[Agent]
+        :return: The created graph objects.
+        :rtype: list[Graph]
+        """
+        created_hi_graphs: list[gr.Graph] = []
+
+        # Calculate the number of noninfluential agents
+        n_ni_agents: int = self.n_agents - self.n_negative
+
+        # Create a set of the agent indices to be used later for iteration
+        agent_indices: set[int] = {i for i in range(len(agents))}
+
+        noninf_rel_range: tuple[float, float] = AGENT_CHARACTERISTICS["relationship"]
+        inf_rel_range: tuple[float, float] = AGENT_CHARACTERISTICS["influential_relationship"]
+
+        for idx, hierarchy in enumerate(hierarchies):
+            graph: gr.Graph = gr.Graph(hierarchy, rw_distributions[idx])
+
+            # Initialise the graph nodes using the full agent population
+            graph.add_nodes(deepcopy(agents))
+
+            new_edges: dict[str, list[int | float]] = {
+                "from_node": [],
+                "to_node": [],
+                "weighting": [],
+            }
+
+            for agent_node in graph.graph.nodes():
+                # Return a filtered list including all indices except the current one
+                valid_indices: list[int] = list(agent_indices ^ {agent_node.index})
+
+                # Declare data types but assign no values
+                selected_indices: list[int]
+                edge_weighting: float
+
+                if agent_node.index < n_ni_agents:
+                    # The agent is non-influential
+                    selected_indices = list(
+                        np.random.choice(
+                            valid_indices,
+                            size=AGENT_CHARACTERISTICS["non_influential_connectivity"],
+                            replace=False,
+                        )
+                    )
+
+                    for selected_index in selected_indices:
+                        edge_weighting = rd.uniform(noninf_rel_range[0], noninf_rel_range[1])
+
+                        # Flip the to_ and from_ indices to make the weighting representative of the agent_node's impact on others
+                        new_edges["from_node"].append(selected_index)
+                        new_edges["to_node"].append(agent_node.index)
+                        new_edges["weighting"].append(edge_weighting)
+                else:
+                    # The agent is influential
+                    selected_indices = list(
+                        np.random.choice(
+                            valid_indices,
+                            size=AGENT_CHARACTERISTICS["influential_connectivity"],
+                            replace=False,
+                        )
+                    )
+
+                    for selected_index in selected_indices:
+                        edge_weighting = rd.uniform(inf_rel_range[0], inf_rel_range[1])
+
+                        # Flip the to_ and from_ indices to make the weighting representative of the agent_node's impact on others
+                        new_edges["from_node"].append(selected_index)
+                        new_edges["to_node"].append(agent_node.index)
+                        new_edges["weighting"].append(edge_weighting)
+
+            graph.add_edges(new_edges)
+            created_hi_graphs.append(graph)
+
+        return created_hi_graphs
+
+    def load_models(self) -> None:
+        """
+        Loads the models that have been previously saved at their respective directories.
+        """
+        self.li_model.load_model(LI_SAVEDIR)
+        self.hi_model.load_model(HI_SAVEDIR)
+        return None
+
+    def setup_models(self) -> None:
+        """
+        Adds the appropriate agent, graph, and group objects to both models.
+        """
+        _ = self.li_model.add_agents(self.li_agents)
+        _ = self.li_model.add_graphs(
+            self.li_graphs,
+            deepcopy(HIERARCHY_NAMES),
+            deepcopy(HIERARCHY_RW_DISTRIBUTIONS),
+        )
+
+        _ = self.hi_model.add_agents(self.hi_agents)
+        _ = self.hi_model.add_graphs(
+            self.hi_graphs,
+            deepcopy(HIERARCHY_NAMES),
+            deepcopy(HIERARCHY_RW_DISTRIBUTIONS),
+        )
+        return None
+
+    def run_model_li(self, worker_pool: WorkerPool | None = None) -> None:
+        """
+        Runs the LI model.
+
+        :param worker_pool: A pool of workers that can share the processing of the model iteration amongst themselves.
+        :type worker_pool: :class:`~multiprocessing.pool.Pool`, optional
+        """
+        self.li_model.iterate(worker_pool=worker_pool)
+        self.li_model.save_model()
+        return None
+
+    def run_model_hi(self, worker_pool: WorkerPool | None = None) -> None:
+        """
+        Runs the HI model.
+
+        :param worker_pool: A pool of workers that can share the processing of the model iteration amongst themselves.
+        :type worker_pool: :class:`~multiprocessing.pool.Pool`, optional
+        """
+        self.hi_model.iterate(worker_pool=worker_pool)
+        self.hi_model.save_model()
+        return None
+
 
 if __name__ == "__main__":
+    MULTIPROCESSED: bool = True
+    WORKER_POOL: WorkerPool | None = Pool() if MULTIPROCESSED else None
+
     class TestParameters(TypedDict):
         n_agents: int
         n_groups: int
@@ -305,9 +520,13 @@ if __name__ == "__main__":
         # Create the tester normally, setup the models, and begin iterations
         tester = InfluentialTester()
         tester.setup_models()
-        tester.run_model_li()
-        tester.run_model_hi()
+        tester.run_model_li(worker_pool=WORKER_POOL)
+        tester.run_model_hi(worker_pool=WORKER_POOL)
     # Both models exist
     else:
         tester = InfluentialTester(existing=True)
         tester.load_models()
+
+    # Ensure that the Pool is closed after all processing is finished
+    if WORKER_POOL is not None:
+        WORKER_POOL.terminate()
