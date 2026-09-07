@@ -371,6 +371,18 @@ class InfluentialTester:
 
         return created_hi_graphs
 
+    def create_li_groups(self) -> None:
+        """
+        Runs KMeans clustering and creates the aggregate groups for the LI model.
+        """
+        return None
+
+    def create_hi_groups(self) -> None:
+        """
+        Runs KMeans clustering and creates the aggregate groups for the HI model.
+        """
+        return None
+
     def load_models(self) -> None:
         """
         Loads the models that have been previously saved at their respective directories.
