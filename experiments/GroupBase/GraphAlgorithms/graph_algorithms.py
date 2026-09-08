@@ -6,6 +6,10 @@ import random as rd
 from copy import deepcopy
 from typing import TypedDict
 
+from multiprocessing import Pool
+# For type checking
+from multiprocessing.pool import Pool as WorkerPool
+
 import gatoh.agents as agt
 import gatoh.graphs as gr
 import gatoh.groups as grp
@@ -182,6 +186,8 @@ class GraphAlgTester:
         """
         created_groups: dict[str, dict[str, list[grp.Group] | list[tuple[int, int]]]] = {}
 
+        group_count: int = 0
+
         for graph in graphs:
             clustered_nodes: dict[gr.GraphNode, int] = graph.cluster_nodes(k=self.num_groups)
 
@@ -195,11 +201,12 @@ class GraphAlgTester:
             for cluster, members in group_members.items():
                 new_group: grp.Group = grp.Group()
                 new_group.generate_group(
-                    f"GROUP{cluster:04}",
+                    f"GROUP{group_count:04}",
                     cluster,
                     graph.name,
                     members,
                 )
+                group_count += 1
                 graph_groups.append(new_group)
 
             created_groups.setdefault(graph.name, {})["groups"] = deepcopy(graph_groups)
@@ -261,26 +268,31 @@ class GraphAlgTester:
             self.create_group_graphs(algorithm)
         return None
 
-    def run_models(self, missing_saves: list[str] | None = None) -> None:
+    def run_models(self, missing_saves: list[str] | None = None, worker_pool: WorkerPool | None = None) -> None:
         """
         Run each model in the tester class.
 
         :param missing_saves: The potentially partial names of the algorithms that do not have an existing save.
         :type missing_saves: list[str], optional
+        :param worker_pool: A pool of workers that can share the processing of the model iteration amongst themselves.
+        :type worker_pool: :class:`~multiprocessing.pool.Pool`, optional
         """
         if missing_saves is not None:
             for missing_save in missing_saves:
-                self.models[missing_save].iterate()
+                self.models[missing_save].iterate(worker_pool=worker_pool)
                 self.models[missing_save].save_model()
             return None
 
         for algorithm in self.algorithms:
-            self.models[algorithm].iterate()
+            self.models[algorithm].iterate(worker_pool=worker_pool)
             self.models[algorithm].save_model()
 
         return None
 
 if __name__ == "__main__":
+    MULTIPROCESSED: bool = True
+    WORKER_POOL: WorkerPool | None = Pool() if MULTIPROCESSED else None
+
     class TestParameters(TypedDict):
         generation_algorithms: list[str]
         num_agents: int
@@ -378,13 +390,17 @@ if __name__ == "__main__":
             # At least one model exists
             tester.load_models(existing_saves=existing_savedirs)
             tester.setup_models(missing_saves=missing_savedirs)
-            tester.run_models(missing_saves=missing_savedirs)
+            tester.run_models(missing_saves=missing_savedirs, worker_pool=WORKER_POOL)
         else:
             # Assume all models should be newly created and run
             tester.setup_models()
-            tester.run_models()
+            tester.run_models(worker_pool=WORKER_POOL)
     # Assume that all existing subdirectories include every algorithm's valid save subdirectory...
     else:
         # Create the tester in "existing" mode, and examine the results
         tester = GraphAlgTester(existing=True)
         tester.load_models()
+
+    # Ensure that the multiprocessing pool is terminated once all processing is finished
+    if WORKER_POOL is not None:
+        WORKER_POOL.terminate()
