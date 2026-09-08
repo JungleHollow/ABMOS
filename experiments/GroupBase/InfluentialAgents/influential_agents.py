@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import gc
 import os
 import random as rd
 from copy import deepcopy
@@ -16,6 +17,14 @@ import gatoh.agents as agt
 import gatoh.graphs as gr
 import gatoh.groups as grp
 import gatoh.model as md
+
+
+class GroupsInfo(TypedDict):
+    """
+    A helper class used for accurate type checking of groups info results.
+    """
+    groups: list[grp.Group]
+    edges: list[tuple[int, int]]
 
 
 class InfluentialTester:
@@ -52,7 +61,9 @@ class InfluentialTester:
         self.li_graphs: list[gr.Graph]
         self.hi_graphs: list[gr.Graph]
         self.li_groups: list[grp.Group]
+        self.li_group_edges: list[tuple[int, int]]
         self.hi_groups: list[grp.Group]
+        self.hi_group_edges: list[tuple[int, int]]
 
         # Create the model objects no matter what
         self.li_model: md.ABModel = md.ABModel(
@@ -99,8 +110,19 @@ class InfluentialTester:
             )
 
             # Create the groups
-            self.li_groups = self.create_li_groups()
-            self.hi_groups = self.create_hi_groups()
+            li_groups_info = self.create_li_groups()
+            hi_groups_info = self.create_hi_groups()
+
+            # Separate the relevant information for groups
+            self.li_groups = li_groups_info["groups"]
+            self.li_group_edges = li_groups_info["edges"]
+            self.hi_groups = hi_groups_info["groups"]
+            self.hi_group_edges = hi_groups_info["edges"]
+
+            # Manual garbage collection
+            del li_groups_info, hi_groups_info
+            _ = gc.collect()
+
 
     def create_li_agents(self) -> list[agt.Agent]:
         """
@@ -371,17 +393,91 @@ class InfluentialTester:
 
         return created_hi_graphs
 
-    def create_li_groups(self) -> None:
+    def create_li_groups(self) -> GroupsInfo:
         """
         Runs KMeans clustering and creates the aggregate groups for the LI model.
-        """
-        return None
 
-    def create_hi_groups(self) -> None:
+        :return: A <hierarchy : groups> mapping of the generated agent groups for each social hierarchy.
+        :rtype: dict[str, dict[str, list[Group] | list[tuple[int, int]]]]
+        """
+        created_groups: GroupsInfo = {
+            "groups": [],
+            "edges": [],
+        }
+
+        for graph in self.li_graphs:
+            clustered_nodes: dict[gr.GraphNode, int] = graph.cluster_nodes(k=self.n_groups)
+
+            # Re-organise the nodes in clusters into clustered agents
+            group_members: dict[int, list[agt.Agent]] = {}
+            for node, cluster in clustered_nodes.items():
+                group_members.setdefault(cluster, []).append(node.agent)
+
+            graph_groups: list[gr.Group] = []
+
+            for cluster, members in group_members.items():
+                new_group: gr.Group = gr.Group()
+                new_group.generate_group(
+                    f"LIGRP{cluster:04}",
+                    cluster,
+                    graph.name,
+                    members,
+                )
+                graph_groups.append(new_group)
+
+            created_groups["groups"].extend(deepcopy(graph_groups))
+            created_groups["edges"].extend(graph.generate_group_edges(graph_groups))
+
+            # Manual garbage collection
+            del clustered_nodes, group_members, graph_groups
+            _ = gc.collect()
+
+        return created_groups
+
+    def create_hi_groups(self) -> GroupsInfo:
         """
         Runs KMeans clustering and creates the aggregate groups for the HI model.
+
+        :return: A <hierarchy : groups> mapping of the generated agent groups for each social hierarchy.
+        :rtype: dict[str, list[Group] | list[tuple[int, int]]]
         """
-        return None
+        created_groups: GroupsInfo = {
+            "groups": [],
+            "edges": [],
+        }
+
+        for graph in self.hi_graphs:
+            clustered_nodes: dict[gr.GraphNode, int] = graph.cluster_nodes(k=self.n_groups)
+
+            # Re-organise the nodes in clusters into clustered agents
+            group_members: dict[int, list[agt.Agent]] = {}
+            for node, cluster in clustered_nodes.items():
+                group_members.setdefault(cluster, []).append(node.agent)
+
+            graph_groups: list[grp.Group] = []
+
+            for cluster, members in group_members.items():
+                new_group: grp.Group = grp.Group()
+                new_group.generate_group(
+                    f"HIGRP{cluster:04}",
+                    cluster,
+                    graph.name,
+                    members,
+                )
+                graph_groups.append(new_group)
+
+            created_groups["groups"].extend(deepcopy(graph_groups))
+            created_groups["edges"]
+            created_groups[graph.name] = {
+                "groups": deepcopy(graph_groups),
+                "edges": graph.generate_group_edges(graph_groups),
+            }
+
+            # Manual garbage collection
+            del clustered_nodes, group_members, graph_groups
+            _ = gc.collect()
+
+        return created_groups
 
     def load_models(self) -> None:
         """
@@ -401,6 +497,7 @@ class InfluentialTester:
             deepcopy(HIERARCHY_NAMES),
             deepcopy(HIERARCHY_RW_DISTRIBUTIONS),
         )
+        _ = self.li_model.add_groups(self.li_groups)
 
         _ = self.hi_model.add_agents(self.hi_agents)
         _ = self.hi_model.add_graphs(
@@ -408,6 +505,19 @@ class InfluentialTester:
             deepcopy(HIERARCHY_NAMES),
             deepcopy(HIERARCHY_RW_DISTRIBUTIONS),
         )
+        _ = self.hi_model.add_groups(self.hi_groups)
+
+        from_group: grp.Group
+        to_group: grp.Group
+        for connection in self.li_group_edges:
+            from_group = self.li_groups[connection[0]]
+            to_group = self.li_groups[connection[1]]
+            self.li_model.add_group_graph_edge(from_group, to_group)
+        for connection in self.hi_group_edges:
+            from_group = self.hi_groups[connection[0]]
+            to_group = self.hi_groups[connection[1]]
+            self.hi_model.add_group_graph_edge(from_group, to_group)
+
         return None
 
     def run_model_li(self, worker_pool: WorkerPool | None = None) -> None:
