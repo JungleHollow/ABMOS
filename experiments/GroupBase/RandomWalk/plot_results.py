@@ -3,11 +3,13 @@ import csv
 from gatoh.utils import plot_graph
 
 if __name__ == "__main__":
+    ROOT_DIR: str = "./experiments/GroupBase/RandomWalk"
+
     DATAFILES: dict[str, str] = {
-        "BASE": "./experiments/Base/RandomWalk/BASE_model_variables.csv",
-        "RELS": "./experiments/Base/RandomWalk/RELS_model_variables.csv",
-        "HIER": "./experiments/Base/RandomWalk/HIER_model_variables.csv",
-        "BOTH": "./experiments/Base/RandomWalk/BOTH_model_variables.csv",
+        "BASE": f"{ROOT_DIR}/BASE_model_variables.csv",
+        "RELS": f"{ROOT_DIR}/RELS_model_variables.csv",
+        "HIER": f"{ROOT_DIR}/HIER_model_variables.csv",
+        "BOTH": f"{ROOT_DIR}/BOTH_model_variables.csv",
     }
 
     aggregate_opinions: dict[str, list[float]] = {
@@ -42,7 +44,7 @@ if __name__ == "__main__":
             for row in csv_reader:
                 aggregate_opinion: float = float(row["aggregate_opinions"])
                 radicalised_agent: int = int(row["radicalised_agents"])
-                # All hierarchies contain full population, so polarisation in one layer is representative of all
+                # All hierarchies contain the full population, so polarisation in one layer is representative of all
                 polarisation: float = float(row["layer_polarisations_A"])
 
                 aggregate_opinions[model_instance].append(aggregate_opinion)
@@ -56,7 +58,7 @@ if __name__ == "__main__":
         x_label="Iterations",
         y_label="Network Aggregate Opinions",
         title="Network Aggregate Opinions over Iterations",
-        save_path="./experiments/Base/RandomWalk/RandomWalk_AggOps.png",
+        save_path=f"{ROOT_DIR}/RandomWalk_AggOps.png",
     )
 
     # Plot the radicalised agents
@@ -66,7 +68,7 @@ if __name__ == "__main__":
         x_label="Iterations",
         y_label="Number of Radicalised Agents",
         title="Number of Radicalised Agents over Iterations",
-        save_path="./experiments/Base/RandomWalk/RandomWalk_RadicalAgents.png",
+        save_path=f"{ROOT_DIR}/RandomWalk_RadicalAgents.png",
     )
 
     # Plot the polarisations
@@ -76,5 +78,5 @@ if __name__ == "__main__":
         x_label="Iterations",
         y_label="Network Polarisation",
         title="Network Polarisation over Iterations",
-        save_path="./experiments/Base/RandomWalk/RandomWalk_Polarisations.png",
+        save_path=f"{ROOT_DIR}/RandomWalk_Polarisations.png"
     )
