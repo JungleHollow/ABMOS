@@ -405,6 +405,8 @@ class InfluentialTester:
             "edges": [],
         }
 
+        group_count: int = 0
+
         for graph in self.li_graphs:
             clustered_nodes: dict[gr.GraphNode, int] = graph.cluster_nodes(k=self.n_groups)
 
@@ -418,11 +420,12 @@ class InfluentialTester:
             for cluster, members in group_members.items():
                 new_group: gr.Group = gr.Group()
                 new_group.generate_group(
-                    f"LIGRP{cluster:04}",
+                    f"LIGRP{group_count + 1:04}",
                     cluster,
                     graph.name,
                     members,
                 )
+                group_count += 1
                 graph_groups.append(new_group)
 
             created_groups["groups"].extend(deepcopy(graph_groups))
