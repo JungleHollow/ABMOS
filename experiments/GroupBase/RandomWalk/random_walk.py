@@ -219,7 +219,7 @@ class RandomWalkTester:
         :rtype: tuple[list[Group], list[tuple[int, int]]]
         """
         print("Starting Group creation")
-        created_groups: list[gr.Group] = []
+        created_groups: list[grp.Group] = []
         group_relationships: list[tuple[int, int]] = []
 
         group_count: int = 0
