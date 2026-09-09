@@ -294,6 +294,42 @@ class SocialSusceptibilityTester:
         :param missing_saves: A potentially partial list of model names for models which do not have existing data.
         :type missing_saves: list[str], optional
         """
+        print("==== Setting up the model instances ====")
+
+        from_group: grp.Group
+        to_group: grp.Group
+
+        if missing_saves is not None:
+            for missing_save in missing_saves:
+                _ = self.models[missing_save].add_agents(deepcopy(self.model_agents[missing_save]))
+                _ = self.models[missing_save].add_graphs(
+                    deepcopy(self.model_graphs[missing_save]),
+                    TEST_PARAMETERS["hierarchy_names"],
+                    list(TEST_PARAMETERS["hierarchy_rw"].values()),
+                )
+                _ = self.models[missing_save].add_groups(deepcopy(self.model_groups[missing_save]))
+
+                for edge in self.group_edges:
+                    from_group = self.model_groups[missing_save][edge[0]]
+                    to_group = self.model_groups[missing_save][edge[1]]
+                    self.models[missing_save].add_group_graph_edge(from_group, to_group)
+
+            return None
+
+        for model_name in self.model_names:
+            _ = self.models[model_name].add_agents(deepcopy(self.model_agents[model_name]))
+            _ = self.models[model_name].add_graphs(
+                deepcopy(self.model_graphs[model_name]),
+                TEST_PARAMETERS["hierarchy_names"],
+                list(TEST_PARAMETERS["hierarchy_rw"].values()),
+            )
+            _ = self.models[model_name].add_groups(deepcopy(self.model_groups[model_name]))
+
+            for edge in self.group_edges:
+                from_group = self.model_groups[model_name][edge[0]]
+                to_group = self.model_groups[model_name][edge[1]]
+                self.models[model_name].add_group_graph_edge(from_group, to_group)
+
         return None
 
     def run_models(self, missing_saves: list[str] | None = None, worker_pool: WorkerPool | None = None) -> None:
