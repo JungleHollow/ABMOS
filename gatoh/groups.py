@@ -352,6 +352,21 @@ class Group:
         self.aggregate_opinion = opinion_sum / self.get_num_members()
         return None
 
+    def recalculate_aggregate_susceptibility(self, member_susceptibilities: list[float]) -> None:
+        """
+        A setter method that will calculate a fixed aggregate social susceptibility value from
+        the currently held opinion values of members.
+
+        :param member_susceptibilities: The current social susceptibility values of group members.
+        :type member_susceptibilities: list[float]
+        :raises ValueError: If the input list is not the same size as the group.
+        """
+        if len(member_susceptibilities) != self.get_num_members():
+            raise ValueError("The number of member susceptibilities does not match the number of group members")
+        susceptibility_sum: float = sum(member_susceptibilities)
+        self.aggregate_susceptibility = susceptibility_sum / self.get_num_members()
+        return None
+
     def recalculate_radicalisation_rate(self, member_radicalisations: list[bool]) -> None:
         """
         A setter method that will calculate a fixed radicalisation rate value from
@@ -483,6 +498,50 @@ class Group:
             self.aggregate_opinion = -OPINION_MAX
         elif self.aggregate_opinion > OPINION_MAX:
             self.aggregate_opinion = OPINION_MAX
+
+        return per_agent_delta
+
+    def change_aggregate_susceptibility(self, delta_value: float) -> float:
+        """
+        A setter method that changes the Group's aggregate social susceptibility by a given delta value.
+
+        This will not cause changes to the opinions of member agents to create the desired aggregate
+        susceptibility -- It should be handled from within the parent model by using the returned
+        per-agent susceptibility delta value.
+
+        :param delta_value: The delta value by which to shift the Group's aggregate susceptibility.
+        :type delta_value: float
+        :raises TypeError: If delta_value is not a float.
+        :raises AttributeError: If the aggregate_susceptibility has not been initialised yet.
+        :return: The per-agent delta_value that must be applied to each social susceptibility.
+        :rtype: float
+        """
+        if not isinstance(delta_value, float):
+            raise TypeError("delta_value must be a float")
+        if not hasattr(self, "aggregate_susceptibility"):
+            raise AttributeError("aggregate_susceptibility has not been initialised for this group")
+
+        per_agent_delta: float
+
+        if self.aggregate_susceptibility + delta_value > 1.0:
+            # Set the delta value to the difference between the maximum and current rate
+            per_agent_delta = 1.0 - self.aggregate_susceptibility
+        elif self.aggregate_susceptibility + delta_value < 0.0:
+            # Same as above, but for the minimum
+            per_agent_delta = 0.0 - self.aggregate_susceptibility
+        else:
+            # Simply use the raw delta value (each individual susceptibility shifted by the delta will cause the aggregate
+            # to shift by the same delta on average)
+            per_agent_delta = delta_value
+
+        # Change the group's aggregate susceptibility value in the meantime
+        self.aggregate_susceptibility += delta_value
+
+        # Constrain the value back to the valid range
+        if self.aggregate_susceptibility < 0.0:
+            self.aggregate_susceptibility = 0.0
+        elif self.aggregate_susceptibility > 1.0:
+            self.aggregate_susceptibility = 1.0
 
         return per_agent_delta
 
