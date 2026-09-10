@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import gc
 import os
 import pickle
 import random as rd
@@ -171,6 +172,8 @@ class OpinionChangesTester:
         self.model_graphs: list[gr.Graph] = []
         self.model_groups: list[grp.Group] = []
 
+        self.group_edges: list[tuple[int, int]] = []
+
         if not self.existing:
             self.create_agents()
             self.create_graphs(self.model_agents)
@@ -207,18 +210,88 @@ class OpinionChangesTester:
         """
         Generates and sets the shared population of Agent objects that will be used across the instances.
         """
+        print("==== Starting Agent creation ====")
+        created_agents: list[agt.Agent] = []
+
+        benefit_flags: list[bool] = list(AGENT_PARAMETERS["personal_benefit"].keys())
+        benefit_p: list[float] = list(AGENT_PARAMETERS["personal_benefit"].values())
+
+        for i in range(self.n_agents):
+            agent_id: str = f"{AGENT_PARAMETERS['id_base']}{i + 1:04}"
+            agent_opinion: float = rd.uniform(AGENT_PARAMETERS["opinions"][0], AGENT_PARAMETERS["opinions"][1])
+            agent_personality: str = agt.draw_personality()
+            agent_susceptibility: float = rd.uniform(
+                AGENT_PARAMETERS["social_susceptibility"][0],
+                AGENT_PARAMETERS["social_susceptibility"][1],
+            )
+            agent_behaviour: tuple[str, float] = (agent_personality, agent_susceptibility)
+            agent_benefit: bool = bool(np.random.choice(benefit_flags, size=1, p=benefit_p)[0])
+
+            hierarchy_weightings: dict[str, float] = {}
+            for hierarchy_name in TEST_PARAMETERS["hierarchy_names"]:
+                generated_weighting: float = rd.uniform(
+                    AGENT_PARAMETERS["hierarchy_weighting"][0],
+                    AGENT_PARAMETERS["hierarchy_weighting"][1],
+                )
+                hierarchy_weightings[hierarchy_name] = generated_weighting
+
+            created_agent: agt.Agent = agt.Agent(
+                agent_id,
+                agent_opinion,
+                hierarchy_weightings,
+                agent_behaviour,
+                agent_benefit,
+            )
+
+            created_agents.append(created_agent)
+
+        self.model_agents = deepcopy(created_agents)
+
+        # Manual garbage collection
+        del created_agents
+        _ = gc.collect()
+
+        # Serialise the created Agent objects so that they remain unchanged across future runs
+        self.pickle_agents()
+
+        print("==== Finished Agent creation ====")
         return None
 
     def pickle_agents(self) -> None:
         """
         Serialises the tester's initial shared Agent population to a subdirectory within the experiment directory.
         """
+        agents_path: str = f"{ROOT_DIR}/agents"
+
+        if not os.path.exists(agents_path):
+            os.mkdir(agents_path)
+
+        for agent in self.model_agents:
+            agent_pickle_path: str = f"{agents_path}/agent_{agent.id}.pkl"
+            with open(agent_pickle_path, "wb") as pickle_file:
+                pickle.dump(agent, pickle_file)
+
         return None
 
     def load_agents(self) -> None:
         """
         Deserialises the tester's initial shared Agent population and loads them into memory.
         """
+        agents_path: str = f"{ROOT_DIR}/agents"
+
+        for i in range(self.n_agents):
+            agent_id: str = f"{AGENT_PARAMETERS['id_base']}{i + 1:04}"
+            agent_pickle_path: str = f"{agents_path}/agent_{agent_id}.pkl"
+            agent_obj: agt.Agent
+            with open(agent_pickle_path, "rb") as pickle_file:
+                agent_obj = pickle.load(pickle_file)
+
+            self.model_agents.append(deepcopy(agent_obj))
+
+            # Manual garbage collection
+            del agent_id, agent_pickle_path, agent_obj
+            _ = gc.collect()
+
         return None
 
     def create_graphs(self, agents: list[agt.Agent]) -> None:
@@ -228,18 +301,134 @@ class OpinionChangesTester:
         :param agents: The population of agents to use for graph creation.
         :type agents: list[Agent]
         """
+        print("==== Starting Graph creation ====")
+
+        # Workaround to allow for np random choice
+        agent_indices: list[int] = [i for i in range(len(agents))]
+
+        for hierarchy in TEST_PARAMETERS["hierarchy_names"]:
+            graph: gr.Graph = gr.Graph(
+                hierarchy, TEST_PARAMETERS["relationship_rw"], suppress_warnings=True,
+            )
+
+            if hierarchy == "A":
+                # Ensure that every agent in the population belongs to at least one hierarchy
+                _ = graph.generate_graph(
+                    deepcopy(agents),
+                    method=TEST_PARAMETERS["graph_generation_alg"],
+                    relationship_range=AGENT_PARAMETERS["relationships"],
+                )
+            else:
+                hierarchy_n_agents: int = rd.randint(self.n_agents // 10, self.n_agents)
+                selected_agents: list[int] = list(np.random.choice(agent_indices, size=hierarchy_n_agents, replace=False))
+
+                agent_sample: list[agt.Agent] = []
+                for index in selected_agents:
+                    agent_sample.append(deepcopy(agents[index]))
+
+                _ = graph.generate_graph(
+                    deepcopy(agent_sample),
+                    method=TEST_PARAMETERS["graph_generation_alg"],
+                    relationship_range=AGENT_PARAMETERS["relationships"],
+                )
+
+                # Manual garbage collection
+                del hierarchy_n_agents, selected_agents, agent_sample
+                _ = gc.collect()
+
+            self.model_graphs.append(deepcopy(graph))
+
+            # Manual garbage collectioon
+            del graph
+            _ = gc.collect()
+
+        # Serialise the created Graph objects so that they remain unchanged across future runs
+        self.pickle_graphs()
+
+        print("==== Graph creation finished ====")
         return None
 
     def pickle_graphs(self) -> None:
         """
         Serialises the tester's initial shared Graph population to a subdirectory within the experiment directory.
         """
+        graphs_path: str = f"{ROOT_DIR}/graphs"
+
+        if not os.path.exists(graphs_path):
+            os.mkdir(graphs_path)
+
+        for graph in self.model_graphs:
+            graph_dir: str = f"{graphs_path}/{graph.name}"
+            if not os.path.exists(graph_dir):
+                os.mkdir(graph_dir)
+
+            # Write the graphml file for the graph
+            graph.save_graph(f"{graph_dir}/graph_{graph.name}.graphml")
+
+            nodes_dir: str = f"{graph_dir}/nodes"
+            if not os.path.exists(nodes_dir):
+                os.mkdir(nodes_dir)
+
+            for idx, node in enumerate(graph.graph.nodes()):
+                node_pickle_path: str = f"{nodes_dir}/node_{idx}.pkl"
+                with open(node_pickle_path, "wb") as pickle_file:
+                    pickle.dump(node, pickle_file)
+
+            edges_dir: str = f"{graph_dir}/edges"
+            if not os.path.exists(edges_dir):
+                os.mkdir(edges_dir)
+
+            for idx, edge in enumerate(graph.graph.edges()):
+                edge_pickle_path: str = f"{edges_dir}/edge_{idx}.pkl"
+                with open(edge_pickle_path, "wb") as pickle_file:
+                    pickle.dump(edge, pickle_file)
+
         return None
 
     def load_graphs(self) -> None:
         """
         Deserialises the tester's initial shared Graph population and loads it into memory.
         """
+        graphs_path: str = f"{ROOT_DIR}/graphs"
+
+        for hierarchy in TEST_PARAMETERS["hierarchy_names"]:
+            hierarchy_dir: str = f"{graphs_path}/{hierarchy}"
+
+            new_graph: gr.Graph = gr.Graph("", (0.0, 0.0))
+            new_graph.load_graph(
+                f"{hierarchy_dir}/graph_{hierarchy}.graphml",
+                hierarchy,
+                rw_params=TEST_PARAMETERS["hierarchy_rw"][hierarchy],
+            )
+
+            nodes_dir: str = f"{hierarchy_dir}/nodes"
+            node_paths: list[str] = list(os.walk(nodes_dir))[0][2]
+
+            for node_path in node_paths:
+                node_index: int = int(
+                    (os.path.basename(node_path).split("_")[-1]).split(".")[0]
+                )
+                with open(f"{nodes_dir}/{node_path}", "rb") as pickle_file:
+                    node_object: gr.GraphNode = pickle.load(pickle_file)
+                    new_graph.graph[node_index] = node_object
+
+            edges_dir: str = f"{hierarchy_dir}/edges"
+            edge_paths: list[str] = list(os.walk(edges_dir))[0][2]
+
+            for edge_path in edge_paths:
+                edge_index: int = int(
+                    (os.path.basename(edge_path).split("_")[-1]).split(".")[0]
+                )
+                with open(f"{edges_dir}/{edge_path}", "rb") as pickle_file:
+                    edge_object: gr.GraphEdge = pickle.load(pickle_file)
+                    new_graph.graph.update_edge_by_index(edge_index, edge_object)
+
+            self.model_graphs.append(deepcopy(new_graph))
+
+            # Manual garbage collection
+            del new_graph, hierarchy_dir, nodes_dir, node_paths, edges_dir, edge_paths
+            _ = gc.collect()
+
         return None
 
     def create_groups(self, graphs: list[gr.Graph]) -> None:
@@ -249,6 +438,48 @@ class OpinionChangesTester:
         :param graphs: The population of social hierarchy graphs to cluster and form groups from.
         :type graphs: list[Graph]
         """
+        print("==== Starting Group creation ====")
+        created_groups: list[grp.Group] = []
+        group_relationships: list[tuple[int, int]] = []
+
+        group_count: int = 0
+
+        for graph in graphs:
+            clustered_nodes: dict[gr.GraphNode, int] = graph.cluster_nodes(k=self.n_groups)
+
+            # Re-organise the nodes in clusters into clustered agents
+            group_members: dict[int, list[agt.Agent]] = {}
+            for node, cluster in clustered_nodes.items():
+                group_members.setdefault(cluster, []).append(node.agent)
+
+            graph_groups: list[grp.Group] = []
+
+            for cluster, members in group_members.items():
+                new_group: grp.Group = grp.Group()
+                new_group.generate_group(
+                    f"GROUP{group_count + 1:04}",
+                    cluster,
+                    graph.name,
+                    members,
+                )
+                group_count += 1
+                graph_groups.append(new_group)
+
+            created_groups.extend(deepcopy(graph_groups))
+            group_relationships.extend(graph.generate_group_edges(graph_groups))
+
+            # Manual garbage collection
+            del clustered_nodes, group_members, graph_groups
+            _ = gc.collect()
+
+        self.group_edges = deepcopy(group_relationships)
+        self.model_groups = deepcopy(created_groups)
+
+        # Manual garbage collection
+        del group_relationships, created_groups
+        _ = gc.collect()
+
+        print("==== Finished Group creation ====")
         return None
 
     def pickle_groups(self) -> None:
