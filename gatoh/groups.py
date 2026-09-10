@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from gatoh.agents import Agent, PersonalityProbs
 
-from gatoh.utils import draw_random_value, value_rw_delta, make_list_with_mode
+from gatoh.utils import draw_random_value, value_rw_delta, make_list_with_mode, random_coinflip
 
 # Definition of all valid, existing group member personality types
 PERSONALITIES: list[str] = ["neutral", "rational", "erratic", "impulsive", "social"]
@@ -48,6 +48,24 @@ PERSONALITY_THRESH: float = 0.999
 RADICALISATION_THRESH: float = 0.999
 # The threshold used when determining if stochastic silencing changes occur
 SILENCING_THRESH: float = 0.999
+# The aggregate benefit threshold to use for deradicalisation
+DERAD_AGG_BEN_THRESH: float = 0.5
+# The opinion modifier for "erratic" groups when determining deradicalisation
+DERAD_ERRATIC_MOD: float = 1.25
+# The probabilities corresponding to radicalisation = [True, False] respectively for impulsive groups in deradicalisation
+DERAD_IMPULSIVE_PROBS: list[float] = [0.75, 0.25]
+# The threshold modifier used when checking deradicalisation in "social" groups
+DERAD_SOCIAL_THRESH_MOD: float = 0.5
+# The aggregate benefit threshold to use for radicalisation
+RAD_AGG_BEN_THRESH: float = 0.5
+# The opinion modifier for "erratic" groups when determining radicalisation
+RAD_ERRATIC_MOD: float = 1.25
+# The threshold modifier used when checking radicalisation in "impulsive" groups
+RAD_IMPULSIVE_MOD: float = 0.5
+# The probabilities corresponding to radicalisation = [True, False] respectively for impulsive groups in radicalisation
+RAD_IMPULSIVE_PROBS: list[float] = [0.25, 0.75]
+# The threshold modifier used when checking radicalisation in "social" groups
+RAD_SOCIAL_THRESH_MOD: float = 0.5
 
 # Used for type-checking valid group cohesion types wherever relevant
 class CohesionProbs(TypedDict):
@@ -1108,6 +1126,152 @@ class Group:
                 negation_strength /= (1.0 - self.aggregate_susceptibility) * self.aggregate_hierarchy_weighting
 
         return negation_strength > threshold
+
+    def deradicalisation(
+        self,
+        neighbour_influences: float,
+        neighbour_benefits: list[bool],
+        threshold: float,
+    ) -> tuple[bool, float]:
+        """
+        Uses the group's own aggregate opinion as well as the neighbours' opinions to determine if an already radicalised group
+        will deradicalise.
+
+        :param neighbour_influences: The total influence that the group's neighbouring opinions have had on it this iteration.
+        :type neighbour_influences: float
+        :param neighbour_benefits: Flags indicating the presence of personal benefit across a group's neighbours.
+        :type neighbour_benefits: list[bool]
+        :param threshold: The deradicalisation threshold that has been defined at the global level in the model.
+        :type threshold: float
+        :raises RuntimeError: If the group has not yet been initialised appropriately.
+        :raises TypeError: If any of the input parameters contain an invalid data type.
+        :return: A (deradicalisation flag, per-agent delta) pair outlining if deradicalisation occurred, and the per-agent opinion delta to apply.
+        :rtype: tuple[bool, float]
+        """
+        # Check that the group is initialised
+        if not hasattr(self, "aggregate_opinion") or not hasattr(self, "member_benefit_rate") or not hasattr(self, "aggregate_susceptibility"):
+            raise RuntimeError("The group for which deradicalisation is being determined has not yet been initialised")
+
+        # Initial data type check
+        if not isinstance(neighbour_influences, float):
+            raise TypeError("neighbour_influences must be a float")
+        if not isinstance(neighbour_benefits, list):
+            raise TypeError("neighbour_benefits must be a list")
+        if not isinstance(threshold, float):
+            raise TypeError("threshold must be a float")
+
+        # Data type check for items within lists
+        for neighbour_benefit in neighbour_benefits:
+            if not isinstance(neighbour_benefit, bool):
+                raise TypeError("One or more of the items in neighbour_benefits is of an invalid data type -- all must be booleans")
+
+        # If the group is not radicalised, always return False, and a per-agent delta of 0.0
+        if not self.is_radicalised(threshold=threshold):
+            return (False, 0.0)
+
+        absolute_opinion: float = abs(self.aggregate_opinion)
+
+        # Calculate the "aggregate aggregate benefit" (not a typo) as a simple fraction of (aggregate benefit = True) / (length of neighbours)
+        aggregate_benefit_count: float = 0.0
+        for neighbour_benefit in neighbour_benefits:
+            if neighbour_benefit:
+                aggregate_benefit_count += 1.0
+
+        if len(neighbour_benefits) != 0:
+            aggregate_benefit: float = aggregate_benefit_count / len(neighbour_benefits)
+        else:
+            aggregate_benefit = aggregate_benefit_count
+
+        radicalisation_rate_delta: float = 0.0
+        match self.predominant_personality:
+            case "neutral":
+                # This will mean that deradicalisation is exclusively determined by the strength of the Group's opinion
+                if absolute_opinion <= threshold:
+                    # Reduce the group's radicalisation rate until it is not considered radicalised anymore
+                    # (*1.05 to have some buffer space for the deradicalisation to be definite)
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+            case "rational":
+                # This will likely mean that the group is more disposed towards considering tangible benefits and their own
+                # opinions when determining deradicalisation, rather than external influences
+                if absolute_opinion <= threshold and aggregate_benefit >= DERAD_AGG_BEN_THRESH:
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+                elif absolute_opinion >= threshold and aggregate_benefit > DERAD_AGG_BEN_THRESH and random_coinflip("bool"):
+                    # In the case where the radicalisation threshold is not met bu there is a presence of aggregate benefit, treat it as a random coinflip
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+            case "erratic":
+                # Deradicalisation is influenced by personal opinions to some extent, but is largely stochastically determined
+                if absolute_opinion * DERAD_ERRATIC_MOD <= threshold:
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+            case "impulsive":
+                # The group places very strong consideration on tangible benefits over anything else
+                if absolute_opinion <= threshold and not self.is_benefited():
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+                elif absolute_opinion <= threshold and self.is_benefited():
+                    # The choice is stochastically determined, but the presence of personal benefit affects the weighting
+                    # and it is no longer an even coinflip
+                    radicalisation: bool = rd.choices([True, False], weights=DERAD_IMPULSIVE_PROBS)[0]
+                    if not radicalisation:
+                        radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                        return (True, radicalisation_rate_delta)
+            case "social":
+                # Deradicalisation is strongly determined by the opinion climate and neighbour opinions rather than internal factors
+                change_direction: bool = (neighbour_influences < 0.0 and self.aggregate_opinion < 0.0) or (neighbour_influences > 0.0 and self.aggregate_opinion > 0.0)
+                absolute_change: float = abs(neighbour_influences)
+                if absolute_change >= (1.0 - self.aggregate_susceptibility) and not change_direction:
+                    # A strong opinion change which disagreed with the group's opinion was caused by its neighbours
+                    radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
+                    return (True, radicalisation_rate_delta)
+            case _:
+                return (False, 0.0)
+        # If this is somehow reached, an error has occurred (but return a null result just in case)
+        return (False, 0.0)
+
+    def radicalisation(
+        self,
+        neighbour_influences: float,
+        neighbour_benefits: list[bool],
+        threshold: float,
+    ) -> tuple[bool, float]:
+        """
+        Uses the group's own aggregate opinion as well as the neighbours' opinions to determine if a non-radical group
+        will become radicalised.
+
+        :param neighbour_influences: The total influence that the group's neighbouring opinions have had on it this iteration.
+        :type neighbour_influences: float
+        :param neighbour_benefits: Flags indicating the presence of personal benefit across a group's neighbours.
+        :type neighbour_benefits: list[bool]
+        :param threshold: The radicalisation threshold that has been defined at the global level in the model.
+        :type threshold: float
+        :raises RuntimeError: If the group has not yet been initialised appropriately.
+        :raises TypeError: If any of the input parameters contain an invalid data type.
+        :return: A (radicalisation flag, per-agent delta) pair outlining if radicalisation has occurred, and the per-agent opinion delta to apply.
+        :rtype: tuple[bool, float]
+        """
+        # Check that the group is initialised
+        if not hasattr(self, "aggregate_opinion") or not hasattr(self, "member_benefit_rate") or not hasattr(self, "aggregate_susceptibility"):
+            raise RuntimeError("The group for which radicalisation is being determined has not yet been initialised")
+
+        # Initial data type check
+        if not isinstance(neighbour_influences, float):
+            raise TypeError("neighbour_influences must be a float")
+        if not isinstance(neighbour_benefits, list):
+            raise TypeError("neighbour_benefits must be a list")
+        if not isinstance(threshold, float):
+            raise TypeError("threshold must be a float")
+        
+        # Data type check for items within lists
+        for neighbour_benefit in neighbour_benefits:
+            if not isinstance(neighbour_benefit, bool):
+                raise TypeError("One or more of the items in neighbour_benefits is of an invalid data type -- all must be booleans")
+
+        # If the group is already radicalised, always return False and a per-agent delta of 0.0
+        if self.is_radicalised(threshold=threshold):
+            return (False, 0.0)
 
     def evolve_hierarchy(self, weighting_rw: tuple[float, float]) -> tuple[str, float]:
         """
