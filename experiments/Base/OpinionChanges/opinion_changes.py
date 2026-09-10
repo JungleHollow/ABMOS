@@ -415,6 +415,7 @@ class OpinionChangesTester:
         save_struct_path: str
         save_struct_dict: SaveStructDict
         new_model: md.ABModel
+        model_struct: ModelStruct
         if existing_saves:
             for existing_save in existing_saves:
                 # Create an empty dummy model object
@@ -429,7 +430,7 @@ class OpinionChangesTester:
                 with open(save_struct_path, "rb") as pickle_file:
                     save_struct_dict = pickle.load(pickle_file)
 
-                model_struct: ModelStruct = ModelStruct(
+                model_struct = ModelStruct(
                     deepcopy(new_model),
                     save_struct_dict["max_iterations"],
                     save_struct_dict["change_iteration"],
@@ -453,7 +454,7 @@ class OpinionChangesTester:
             with open(save_struct_path, "rb") as pickle_file:
                 save_struct_dict = pickle.load(pickle_file)
 
-            model_struct: ModelStruct = ModelStruct(
+            model_struct = ModelStruct(
                 deepcopy(new_model),
                 save_struct_dict["max_iterations"],
                 save_struct_dict["change_iteration"],

@@ -457,7 +457,7 @@ class OpinionChangesTester:
             for cluster, members in group_members.items():
                 new_group: grp.Group = grp.Group()
                 new_group.generate_group(
-                    f"GROUP{group_count + 1:04}",
+                    f"{GROUP_PARAMETERS['id_base']}{group_count + 1:04}",
                     cluster,
                     graph.name,
                     members,
@@ -486,12 +486,45 @@ class OpinionChangesTester:
         """
         Serialises the tester's initial shared Group population to a subdirectory within the experiment directory.
         """
+        groups_path: str = f"{ROOT_DIR}/groups"
+
+        if not os.path.exists(groups_path):
+            os.mkdir(groups_path)
+
+        for group in self.model_groups:
+            group_pickle_path: str = f"{groups_path}/group_{group.id}.pkl"
+            with open(group_pickle_path, "wb") as pickle_file:
+                pickle.dump(group, pickle_file)
+
+        # Also pickle the group edges
+        with open(f"{groups_path}/group_edges.pkl", "wb") as pickle_file:
+            pickle.dump(self.group_edges, pickle_file)
+
         return None
 
     def load_groups(self) -> None:
         """
         Deserialises the tester's initial shared Group population and loads them into memory.
         """
+        groups_path: str = f"{ROOT_DIR}/groups"
+
+        for i in range(self.n_groups):
+            group_id: str = f"{GROUP_PARAMETERS['id_base']}{i + 1:04}"
+            group_pickle_path: str = f"{groups_path}/group_{group_id}.pkl"
+            group_obj: grp.Group
+            with open(group_pickle_path, "rb") as pickle_file:
+                group_obj = pickle.load(pickle_file)
+
+            self.model_groups.append(deepcopy(group_obj))
+
+            # Manual garbage collection
+            del group_id, group_pickle_path, group_obj
+            _ = gc.collect()
+
+        # Also load the group edges
+        with open(f"{groups_path}/group_edges.pkl", "rb") as pickle_file:
+            self.group_edges = pickle.load(pickle_file)
+
         return None
 
     def load_models(self, existing_saves: list[str] | None = None) -> None:
@@ -501,6 +534,61 @@ class OpinionChangesTester:
         :param existing_saves: A potentially partial list of model names representing models that have existing saves.
         :type existing_saves: list[str], optional
         """
+        save_struct_path: str
+        save_struct_dict: SaveStructDict
+        new_model: md.ABModel
+        model_struct: ModelStruct
+        if existing_saves is not None:
+            for existing_save in existing_saves:
+                # Create an empty dummy model
+                new_model = md.ABModel(
+                    TEST_PARAMETERS["hierarchy_names"], list(TEST_PARAMETERS["hierarchy_rw"].values()),
+                )
+                new_model.load_model(SAVEDIRS[existing_save])
+
+                save_struct_path = f"{SAVEDIRS[existing_save]}/{new_model.model_id}.pkl"
+                with open(save_struct_path, "rb") as pickle_file:
+                    save_struct_dict = pickle.load(pickle_file)
+
+                model_struct = ModelStruct(
+                    deepcopy(new_model),
+                    save_struct_dict["max_iterations"],
+                    save_struct_dict["change_iteration"],
+                    save_struct_dict["changed_agents"],
+                    save_struct_dict["changed_groups"],
+                )
+
+                self.models.append(deepcopy(model_struct))
+
+                # Manual garbage collection
+                del new_model, save_struct_dict, model_struct, save_struct_path
+                _ = gc.collect()
+            return None
+
+        for model_name, model_savedir in SAVEDIRS.items():
+            new_model = md.ABModel(
+                TEST_PARAMETERS["hierarchy_names"], list(TEST_PARAMETERS["hierarchy_rw"].values()),
+            )
+            new_model.load_model(model_savedir)
+
+            save_struct_path = f"{model_savedir}/{model_name}.pkl"
+            with open(save_struct_path, "rb") as pickle_file:
+                save_struct_dict = pickle.load(pickle_file)
+
+            model_struct = ModelStruct(
+                deepcopy(new_model),
+                save_struct_dict["max_iterations"],
+                save_struct_dict["change_iteration"],
+                save_struct_dict["changed_agents"],
+                save_struct_dict["changed_groups"],
+            )
+
+            self.models.append(deepcopy(model_struct))
+
+            # Manual garbage collection
+            del new_model, save_struct_dict, save_struct_path, model_struct
+            _ = gc.collect()
+
         return None
 
     def create_savedir_validation(self) -> None:
@@ -511,6 +599,21 @@ class OpinionChangesTester:
         This is done in order to allow for checking of missing instance save directories if the tester is being initialised
         from an existing run.
         """
+        with open(LOGGED_SAVEDIRS, "w", newline="") as csv_file:
+            field_names: list[str] = ["model_name", "model_savedir"]
+
+            csv_writer: csv.DictWriter[str] = csv.DictWriter(
+                csv_file, fieldnames=field_names,
+            )
+            csv_writer.writeheader()
+
+            for model_struct in self.models:
+                csv_row: dict[str, str] = {
+                    "model_name": model_struct.model.model_id,
+                    "model_savedir": model_struct.model.save_dir,
+                }
+                csv_writer.writerow(csv_row)
+
         return None
 
     def initialise_model_structs(self, missing_saves: list[str] | None = None) -> None:
@@ -520,6 +623,80 @@ class OpinionChangesTester:
         :param missing_saves: A potentially partial list of model names representing models that do not have existing saves.
         :type missing_saves: list[str], optional
         """
+        # Workaround to allow for np random choice
+        group_indices: list[int] = [i for i in range(len(self.model_groups))]
+
+        for interval in self.model_intervals:
+            for repeat in range(self.model_repeats):
+                # Generate the unique ID for this instance
+                model_name: str = f"ITER-{interval:03}_NUM-{repeat + 1:02}"
+
+                # Only models in missing saves need to be initialised
+                if missing_saves is not None:
+                    if model_name not in missing_saves:
+                        continue
+
+                # Create the ABModel for this instance
+                new_model: md.ABModel = md.ABModel(
+                    TEST_PARAMETERS["hierarchy_names"],
+                    list(TEST_PARAMETERS["hierarchy_rw"].values()),
+                    suppress_warnings=True,
+                    save_dir=f"{SAVEDIR_ROOT}/OpinionChanges_{model_name}",
+                    data_file=f"{SAVEDIR_ROOT}/OpinionChanges_{model_name}/{model_name}_model_variables.csv",
+                    model_id=model_name,
+                    simulate_groups=True,
+                )
+
+                # Add the Agents, Graphs, and Groups to the new model
+                _ = new_model.add_agents(deepcopy(self.model_agents))
+                _ = new_model.add_graphs(
+                    deepcopy(self.model_graphs),
+                    TEST_PARAMETERS["hierarchy_names"],
+                    list(TEST_PARAMETERS["hierarchy_rw"].values()),
+                )
+                _ = new_model.add_groups(deepcopy(self.model_groups))
+
+                for edge in self.group_edges:
+                    from_group: grp.Group = self.model_groups[edge[0]]
+                    to_group: grp.Group = self.model_groups[edge[1]]
+                    new_model.add_group_graph_edge(from_group, to_group)
+
+                # Sample groups for which the opinion changes will be introduced
+                groups_to_change: int = rd.randint(1, len(self.model_groups))
+                groups_to_change_idxs: list[int] = list(
+                    np.random.choice(group_indices, size=groups_to_change, replace=False)
+                )
+
+                group_ids: list[str] = []
+                for grp_idx in groups_to_change_idxs:
+                    group_ids.append(self.model_groups[grp_idx].id)
+
+                # To keep track of the different agent members that are having their opinions changed
+                agent_ids: dict[str, list[str]] = {}
+
+                # Extract the names of all the hierarchies that each agent in a sampled group belongs to
+                for group_id in group_ids:
+                    group_obj: grp.Group | None = new_model.groups.get_group_by_id(group_id)
+                    if group_obj is not None:
+                        group_members: list[str] = group_obj.members
+                        for group_member in group_members:
+                            agent_ids.setdefault(group_member, []).append(group_obj.hierarchy)
+
+                # Create the ModelStruct object
+                model_struct: ModelStruct = ModelStruct(
+                    deepcopy(new_model),
+                    TEST_PARAMETERS["iterations"],
+                    interval,
+                    deepcopy(agent_ids),
+                    deepcopy(group_ids),
+                )
+
+                self.models.append(deepcopy(model_struct))
+
+                # Manual garbage collection
+                del new_model, groups_to_change, groups_to_change_idxs, group_ids, agent_ids
+                _ = gc.collect()
+        self.create_savedir_validation()
         return None
 
     def save_models(self, missing_saves: list[str] | None = None) -> None:
@@ -529,6 +706,41 @@ class OpinionChangesTester:
         :param missing_saves: A potentially partial list of model names representing models that do not have existing saves.
         :type missing_saves: list[str], optional
         """
+        save_struct: SaveStruct
+        data_saved: bool
+        if missing_saves is None:
+            for model_struct in self.models:
+                # Will save the model to a newly created savedir
+                model_struct.model.save_model()
+
+                # Call the logger's save_data function which handles data persistence appropriately after the model is saved
+                data_saved = model_struct.model.logger.save_data(model_struct.model.data_file)
+
+                if data_saved:
+                    print(f"\n\nGATOH logger data was successfully written to the file at path: {model_struct.model.data_file}\n\n")
+
+                # Extract the ModelStruct info (without the ABModel) and immediately pickle it to the model's newly created savedir
+                save_struct = SaveStruct(model_struct, model_struct.model.save_dir)
+
+                # Manual garbage collection
+                del data_saved, save_struct
+                _ = gc.collect()
+        else:
+            for missing_save in missing_saves:
+                struct_to_save: ModelStruct = self.get_struct(missing_save)
+
+                struct_to_save.model.save_model()
+
+                data_saved = struct_to_save.model.logger.save_data(struct_to_save.model.data_file)
+
+                if data_saved:
+                    print(f"\n\nGATOH logger data was successfully written to the file at path: {struct_to_save.model.data_file}\n\n")
+
+                save_struct = SaveStruct(struct_to_save, struct_to_save.model.save_dir)
+
+                # Manual garbage collection
+                del data_saved, save_struct
+                _ = gc.collect()
         return None
 
     def run_models(self, missing_saves: list[str] | None = None, worker_pool: WorkerPool | None = None) -> None:
@@ -541,6 +753,17 @@ class OpinionChangesTester:
         :param worker_pool: A pool of workers that can distribute the processing of the iteration amongst themselves.
         :type worker_pool: :class:`~multiprocessing.pool.Pool`, optional
         """
+        print("==== Beginning model iterations ====\n\n")
+        if missing_saves is not None:
+            for missing_save in missing_saves:
+                missing_struct: ModelStruct = self.get_struct(missing_save)
+                self.custom_iterate(missing_struct, worker_pool=worker_pool)
+            self.save_models(missing_saves=missing_saves)
+            return None
+
+        for model_struct in self.models:
+            self.custom_iterate(model_struct, worker_pool=worker_pool)
+        self.save_models()
         return None
 
     def agent_opinion_change(self, initial_opinion: float) -> float:
@@ -553,7 +776,29 @@ class OpinionChangesTester:
         :return: An opinion value which is significantly different from the initial one.
         :rtype: float
         """
-        raise NotImplementedError
+        changed_opinion: float = 0.0
+
+        if initial_opinion < 0.0:
+            # A strong negative opinion becomes moderate, and a weak one becomes strongly positive
+            changed_opinion = initial_opinion + 1.0
+        elif 0.0 < initial_opinion:
+            # A strong positive opinion becomes moderate, and a weak one becomes strongly negative
+            changed_opinion = -1.0 + initial_opinion
+        else:  # opinion == 0.0...
+            # A moderate opinion has an equal chance of becoming strongly positive or strongly negative
+            negative_coinflip: bool = random_coinflip("bool")
+            if negative_coinflip:
+                changed_opinion = rd.uniform(-1.0, -0.75)
+            else:
+                changed_opinion = rd.uniform(0.75, 1.0)
+
+        # The values should always remain in the valid range, but a check is included just in case
+        if changed_opinion < -1.0:
+            changed_opinion = -1.0
+        elif 1.0 < changed_opinion:
+            changed_opinion = 1.0
+
+        return changed_opinion
 
     def custom_iterate(self, model_struct: ModelStruct, worker_pool: WorkerPool | None = None) -> None:
         """
@@ -565,6 +810,18 @@ class OpinionChangesTester:
         :param worker_pool: A pool of workers that can distribute the processing of the iteration amongst themselves.
         :type worker_pool: :class:`~multiprocessing.pool.Pool`, optional
         """
+        print(f"==== Iterating model {model_struct.model.model_id} ====")
+
+        while model_struct.current_iteration < model_struct.max_iterations:
+            if model_struct.current_iteration == 0:
+                model_struct.model.logger.new_iteration(init=True)
+            else:
+                model_struct.model.logger.new_iteration()
+
+            is_change_iteration: bool = model_struct.current_iteration == model_struct.change_iteration
+
+            # TODO: Continue from here...
+
         return None
 
 
@@ -623,10 +880,12 @@ if __name__ == "__main__":
 
     class GroupParameters(TypedDict):
         n_groups: int
+        id_base: str
 
     # The parameters that will be used to create the Group population that is shared across models
     GROUP_PARAMETERS: GroupParameters = {
         "n_groups": 20,
+        "id_base": "GEXOC"  # (Grouped EXperiment Opinion Changes)
     }
 
     # The root directory of the entire experiment
