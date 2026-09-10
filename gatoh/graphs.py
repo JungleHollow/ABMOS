@@ -3001,7 +3001,7 @@ class GroupGraph:
             group_node.group.store_previous_opinion()
         return None
 
-    def group_opinion_change(self, group: Group, change_delta: float) -> float:
+    def group_opinion_change(self, group: Group, change_delta: float, deradicalisation: bool = False) -> float:
         """
         Change the specified Group's current aggregate opinion by the given delta.
 
@@ -3009,14 +3009,26 @@ class GroupGraph:
         :type group: Group
         :param change_delta: The value by which to change the Group's aggregate opinion.
         :type change_delta: float
+        :param deradicalisation: A flag indicating that this opinion change is ocurring alongside deradicalisation.
+        :type deradicalisation: bool, optional
         :return: The per-agent delta value that must be applied for the overall group aggregate change to occur.
         :rtype: float
         """
         group_node: GroupNode | None = self.node_from_group(group)
+        per_agent_delta: float =  0.0
         if group_node is not None:
-            per_agent_delta: float = group_node.group.change_aggregate_opinion(change_delta)
+            if not deradicalisation:
+                per_agent_delta = group_node.group.change_aggregate_opinion(change_delta)
+            # If the group was deradicalised this iteration, the change delta is overriden by a moderately significant delta
+            # in the direction opposite to the previously held radical opinion
+            elif deradicalisation and group_node.group.aggregate_opinion < 0.0:
+                group_node.group.change_aggregate_opinion(RAD_OPINION_CHANGE)
+                per_agent_delta = RAD_OPINION_CHANGE
+            elif deradicalisation and 0.0 < group_node.group.aggregate_opinion:
+                group_node.group.change_aggregate_opinion(-RAD_OPINION_CHANGE)
+                per_agent_delta = -RAD_OPINION_CHANGE
             return per_agent_delta
-        return 0.0
+        return per_agent_delta
 
     def group_radicalisation_change(self, group: Group, change_delta: float) -> dict[str, bool]:
         """

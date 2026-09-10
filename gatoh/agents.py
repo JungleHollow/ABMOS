@@ -682,7 +682,7 @@ class Agent:
                 if absolute_opinion <= threshold and aggregate_benefit <= DERAD_AGG_BEN_THRESH:
                     self.radicalised = False
                     return not self.radicalised
-                elif absolute_opinion <= threshold and aggregate_benefit >= DERAD_AGG_BEN_THRESH:
+                elif absolute_opinion >= threshold and aggregate_benefit > DERAD_AGG_BEN_THRESH:
                     # In the case where the radicalisation threshold is not met but there is a presence of aggregate benefit, deradicalisation is treated as a coinflip
                     self.radicalised = random_coinflip("bool")
                     return not self.radicalised

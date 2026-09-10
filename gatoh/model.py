@@ -1207,7 +1207,7 @@ class ABModel:
         """
         # Initialise a dictionary to keep track of group opinion changes
         # (this is done to prevent recursive updating of opinions during the evolution of opinions)
-        new_group_opinions: dict[str, float] = {}
+        new_group_opinions: dict[str, tuple[float, list[bool]]] = {}
 
         # Type declarations
         partial_indices: list[int] | None = None
@@ -1516,7 +1516,7 @@ class ABModel:
     def group_iteration_opinion_calculation(
         self,
         group: Group,
-    ) -> tuple[str, float]:
+    ) -> tuple[str, tuple[float, list[bool]]]:
         """
         A helper function that calculates the per-group changes to opinions for the iteration,
         returning all necessary information for :meth:`~self.group_iteration_opinion_changes`
@@ -1528,7 +1528,7 @@ class ABModel:
         :param group: The group for which the opinion changes are being calculated.
         :type group: Group
         :return: A <Group ID : Changes info> mapping that provides all necessary information to apply the opinion changes for a specific group.
-        :rtype: tuple[str, float]
+        :rtype: tuple[str, tuple[float, list[bool]]]
         """
         group.previous_opinion = group.aggregate_opinion
 
@@ -1546,19 +1546,148 @@ class ABModel:
         else:
             total_change = neighbour_influences
 
-        # TODO: Finish this function...
+        # Check for the existence of personal benefit across all of the group's neighbours
+        all_neighbour_indices: list[int] = list(self.group_graph.group_graph.graph.neighbors(group.index))
+        all_neighbour_benefits: list[bool] = []
+        for neighbour_index in all_neighbour_indices:
+            neighbour_object: Group = self.group_graph.group_graph.graph[neighbour_index].group
+            all_neighbour_benefits.append(neighbour_object.is_benefited())
 
-        return ("", 0.0)
+        # Define the return type
+        opinion_result: tuple[str, tuple[float, list[bool]]]
 
-    def group_iteration_opinion_changes(self, changes_dict: dict[str, float]) -> None:
+        # Constrain to [-1, 1]
+        # 100.0 and -100.0 are used as key delta values indicating that the opinion needs to be constrained
+        if group.aggregate_opinion + total_change < -OPINION_MAX:
+            opinion_result = (
+                group.id,
+                (
+                    -100.0,
+                    all_neighbour_benefits,
+                ),
+            )
+        elif group.aggregate_opinion + total_change > OPINION_MAX:
+            opinion_result = (
+                group.id,
+                (
+                    100.0,
+                    all_neighbour_benefits,
+                ),
+            )
+        else:
+            opinion_result = (
+                group.id,
+                (
+                    total_change,
+                    all_neighbour_benefits,
+                ),
+            )
+        return opinion_result
+
+    def group_iteration_opinion_changes(self, changes_dict: dict[str, tuple[float, list[bool]]]) -> None:
         """
         A helper function for group_iterate that simply applies all group opinion changes and then
         performs the appropriate checks.
 
         :param changes_dict: A <group ID : opinion change information> mapping of the opinion values to apply.
-        :type changes_dict: dict[str, float]
+        :type changes_dict: dict[str, tuple[float, list[bool]]]
         """
-        # TODO: Implement this function
+        for group_id, opinion_change_info in changes_dict.items():
+            group_object: Group | None = self.groups.get_group_by_id(group_id)
+            if self.debug:
+                self.logger.log_function_call("GroupSet.get_group_by_id")
+
+            if group_object is not None:
+                # Flag if the group was already radicalised
+                existing_radicalisation: bool = group_object.is_radicalised()
+
+                agent_opinion_delta: float
+                agent_radicalisations: dict[str, bool]
+                group_opinion_delta: float = opinion_change_info[0]
+
+                # After the opinion change, determine if the agent has become radicalised or deradicalised
+                if not existing_radicalisation:
+                    radicalisation_info: tuple[bool, float] = group_object.radicalisation(
+                        opinion_change_info[0],
+                        opinion_change_info[1],
+                        self.radicalisation_threshold,
+                    )
+                    if self.debug:
+                        self.logger.log_function_call("Group.radicalisation")
+
+                    # Overwrite the group's opinion delta as needed
+                    if radicalisation_info[1] != 0.0:
+                        group_opinion_delta = radicalisation_info[1]
+
+                    # Update the node in the group graph
+                    agent_opinion_delta = self.group_graph.group_graph.group_opinion_change(group_object, group_opinion_delta)
+                    agent_radicalisations = self.group_graph.group_graph.group_radicalisation_change(group_object, radicalisation_info[1])
+
+                    # Handle updating the group members with the provided info
+                    self.group_members_opinion_changes(agent_opinion_delta, agent_radicalisations)
+
+                    # Update the radicalisation count in the logger as needed
+                    # (radicalisation_info[0] will always be False if the group was already radicalised)
+                    self.logger.variables.increment_radicalised_group(radicalisation_info[1])
+
+                    if self.debug:
+                        self.logger.log_function_call("ABModel.group_members_opinion_changes")
+                        self.logger.log_function_call("GroupGraph.group_opinion_change")
+                        self.logger.log_function_call("GroupGraph.group_radicalisation_change")
+                        self.logger.log_function_call("LoggerVariables.increment_radicalised_group")
+                else:
+                    deradicalisation_info: tuple[bool, float] = group_object.deradicalisation(
+                        opinion_change_info[0],
+                        opinion_change_info[1],
+                        self.radicalisation_threshold,
+                    )
+
+                    # Overwrite the group's opinion delta as needed
+                    if deradicalisation_info[1] != 0.0:
+                        group_opinion_delta = deradicalisation_info[1]
+
+                    if self.debug:
+                        self.logger.log_function_call("Group.deradicalisation")
+
+                    # Update the node in the group graph
+                    agent_opinion_delta = self.group_graph.group_graph.group_opinion_change(
+                        group_object, group_opinion_delta, deradicalisation=True,
+                    )
+                    agent_radicalisations = self.group_graph.group_graph.group_radicalisation_change(
+                        group_object, not deradicalisation_info[1],
+                    )
+
+                    # Handle updating the group members with the provided info
+                    self.group_members_opinion_changes(agent_opinion_delta, agent_radicalisations)
+
+                    # Update the deradicalisation count in the logger as needed
+                    # (deradicalisation_info[0] will always be False if the group was not already radicalised)
+                    self.logger.variables.increment_deradicalised_group(deradicalisation_info[1])
+
+                    if self.debug:
+                        self.logger.log_function_call("ABModel.group_members_opinion_changes")
+                        self.logger.log_function_call("GroupGraph.group_opinion_change")
+                        self.logger.log_function_call("GroupGraph.group_radicalisation_change")
+                        self.logger.log_function_call("LoggerVariables.increment_deradicalised_group")
+        if self.debug:
+            self.logger.log_function_call("ABModel.group_iteration_opinion_changes")
+        return None
+
+    def group_members_opinion_changes(self, opinion_delta: float, radicalisations: dict[str, bool]) -> None:
+        """
+        A helper function that applies the group's aggregate opinion changes to the individual Agents which make it up.
+
+        :param opinion_delta: The calculated per-agent opinion delta that must be applied.
+        :type opinion_delta: float
+        :param radicalisations: The new radicalisation statuses that have been determined for each member.
+        :type radicalisations: dict[str, bool]
+        """
+        for group_member, radicalisation in radicalisations.items():
+            agent_obj: Agent = self.agents.get_agent_by_id(group_member)
+            # Apply the opinion delta
+            agent_obj.change_opinion(opinion_delta)
+            # Update the radicalisation status
+            agent_obj.change_radicalisation(radicalisation)
         return None
 
     def apply_link_functions(self) -> None:
