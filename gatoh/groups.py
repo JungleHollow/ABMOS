@@ -1197,8 +1197,8 @@ class Group:
                 if absolute_opinion <= threshold and aggregate_benefit >= DERAD_AGG_BEN_THRESH:
                     radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
                     return (True, radicalisation_rate_delta)
-                elif absolute_opinion >= threshold and aggregate_benefit > DERAD_AGG_BEN_THRESH and random_coinflip("bool"):
-                    # In the case where the radicalisation threshold is not met bu there is a presence of aggregate benefit, treat it as a random coinflip
+                elif absolute_opinion >= threshold and aggregate_benefit >= DERAD_AGG_BEN_THRESH and random_coinflip("bool"):
+                    # In the case where the radicalisation threshold is not met but there is a presence of aggregate benefit, treat it as a random coinflip
                     radicalisation_rate_delta = -(self.radicalisation_rate - threshold) * 1.05
                     return (True, radicalisation_rate_delta)
             case "erratic":
@@ -1263,7 +1263,7 @@ class Group:
             raise TypeError("neighbour_benefits must be a list")
         if not isinstance(threshold, float):
             raise TypeError("threshold must be a float")
-        
+
         # Data type check for items within lists
         for neighbour_benefit in neighbour_benefits:
             if not isinstance(neighbour_benefit, bool):
@@ -1272,6 +1272,63 @@ class Group:
         # If the group is already radicalised, always return False and a per-agent delta of 0.0
         if self.is_radicalised(threshold=threshold):
             return (False, 0.0)
+
+        absolute_opinion: float = abs(self.aggregate_opinion)
+
+        # Calculate the "aggregate aggregate benefit" as a simple fraction of (aggregate benefit = True) / (length of neighbours)
+        aggregate_benefit_count: float = 0.0
+        for neighbour_benefit in neighbour_benefits:
+            if neighbour_benefit:
+                aggregate_benefit_count += 1.0
+
+        if len(neighbour_benefits) != 0:
+            aggregate_benefit: float = aggregate_benefit_count / len(neighbour_benefits)
+        else:
+            aggregate_benefit = aggregate_benefit_count
+
+        radicalisation_rate_delta: float = 0.0
+        match self.predominant_personality:
+            case "neutral":
+                # This will mean that radicalisation is exclusively determined by the strength of the Group's opinion
+                if absolute_opinion >= threshold:
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                    return (True, radicalisation_rate_delta)
+            case "rational":
+                # This will likely mean that the group is more disposed towards considering tangible benefits and their own
+                # opinions when determining radicalisation, rather than external influences
+                if absolute_opinion >= threshold and aggregate_benefit >= RAD_AGG_BEN_THRESH:
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                    return (True, radicalisation_rate_delta)
+                elif absolute_opinion >= threshold and not aggregate_benefit >= RAD_AGG_BEN_THRESH and random_coinflip("bool"):
+                    # In the case where the threshold is met, but there is not explicit aggregate benefit, radicalisation is treated as a coinflip
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                    return (True, radicalisation_rate_delta)
+            case "erratic":
+                # Radicalisation is influenced by personal opinions to some extent, but is largely stochastically determined
+                if absolute_opinion * RAD_ERRATIC_MOD >= threshold:
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+            case "impulsive":
+                # The group places very strong consideration on tangible benefits over anything else
+                if absolute_opinion >= threshold * RAD_IMPULSIVE_MOD and self.is_benefited():
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                    return (True, radicalisation_rate_delta)
+                elif absolute_opinion >= threshold * RAD_IMPULSIVE_MOD and not self.is_benefited():
+                    radicalisation: bool = rd.choices([True, False], weights=RAD_IMPULSIVE_PROBS)[0]
+                    if radicalisation:
+                        radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                        return (True, radicalisation_rate_delta)
+            case "social":
+                # Radicalisation is strongly determined by the opinion climate and neighbour opinions rather than internal factors
+                change_direction: bool = (neighbour_influences < 0.0 and self.aggregate_opinion < 0.0) or (neighbour_influences > 0.0 and self.aggregate_opinion > 0.0)
+                absolute_change: float = abs(neighbour_influences)
+                if absolute_change >= (1.0 - self.aggregate_susceptibility) and change_direction:
+                    # A strong opinion change which agreed with the agent's opinion was caused by neighbour influences
+                    radicalisation_rate_delta = max((threshold - self.radicalisation_rate) * 1.05, 0.0)
+                    return (True, radicalisation_rate_delta)
+            case _:
+                return (False, 0.0)
+        # If this is somehow reached, an error has occurred (but return a null result just in case)
+        return (False, 0.0)
 
     def evolve_hierarchy(self, weighting_rw: tuple[float, float]) -> tuple[str, float]:
         """
