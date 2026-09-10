@@ -208,12 +208,20 @@ class LoggerVariables:
     aggregate_opinions: list[float] = field(default_factory=list)
     # The number of radicalised agents that exist in the model at each timestep
     radicalised_agents: list[int] = field(default_factory=list)
+    # The number of radicalised groups that exist in the model at each timestep
+    radicalised_groups: list[int] = field(default_factory=list)
     # The number of deradicalisation events that occur at each timestep
     deradicalised_agents: list[int] = field(default_factory=list)
+    # The number of group deradicalisation events that occur at each timestep
+    deradicalised_groups: list[int] = field(default_factory=list)
     # The total count of opinion silencing effects that have ocurred in the simulation over time
     silenced_agents: list[int] = field(default_factory=list)
+    # The total count of group silencing events that have occurred in the simulation over time
+    silenced_groups: list[int] = field(default_factory=list)
     # The total count of opinion negation effects that have ocurred in the simulation over time
     negated_agents: list[int] = field(default_factory=list)
+    # The total count of group negation events that have occurred in the simulation over time
+    negated_groups: list[int] = field(default_factory=list)
     # The calculated layer interdependence of each hierarchy at each timestep
     layer_interdependences: dict[str, list[float]] = field(default_factory=dict)
     # The calculated layer polarisation of each hierarchy at each timestep
@@ -234,9 +242,13 @@ class LoggerVariables:
         self.current_iteration = 0
         self.aggregate_opinions = [0.0 for _ in range(self.max_iterations)]
         self.radicalised_agents = [0 for _ in range(self.max_iterations)]
+        self.radicalised_groups = [0 for _ in range(self.max_iterations)]
         self.deradicalised_agents = [0 for _ in range(self.max_iterations)]
+        self.deradicalised_groups = [0 for _ in range(self.max_iterations)]
         self.silenced_agents = [0 for _ in range(self.max_iterations)]
+        self.silenced_groups = [0 for _ in range(self.max_iterations)]
         self.negated_agents = [0 for _ in range(self.max_iterations)]
+        self.negated_groups = [0 for _ in range(self.max_iterations)]
         self.radicalisation_logodds = [0.0 for _ in range(self.max_iterations)]
         self.model_parameters = {}
 
@@ -262,6 +274,16 @@ class LoggerVariables:
             self.radicalised_agents[self.current_iteration - 1] += 1
         return None
 
+    def increment_radicalised_group(self, flag: bool) -> None:
+        """
+        A simple setter function that checks the input flag and updates the group radicalisation count accordingly.
+
+        :param flag: A flag indicating if radicalisation ocurred.
+        :type flag: bool
+        """
+        if flag:
+            self.radicalised_groups[self.current_iteration - 1] += 1
+
     def increment_deradicalised(self, flag: bool) -> None:
         """
         A simple setter function that checks the input flag and updates the deradicalisation count accordingly.
@@ -271,6 +293,17 @@ class LoggerVariables:
         """
         if flag:
             self.deradicalised_agents[self.current_iteration - 1] += 1
+        return None
+
+    def increment_deradicalised_group(self, flag: bool) -> None:
+        """
+        A simple setter function that checks the input flag and updates the group deradicalisation count accordingly.
+
+        :param flag: A flag indicating if deradicalisation ocurred.
+        :type flag: bool
+        """
+        if flag:
+            self.deradicalised_groups[self.current_iteration - 1] += 1
         return None
 
     def increment_silenced(self, flag: bool) -> None:
@@ -284,6 +317,17 @@ class LoggerVariables:
             self.silenced_agents[self.current_iteration - 1] += 1
         return None
 
+    def increment_silenced_group(self, flag: bool) -> None:
+        """
+        A simple setter function that checks the input flag and updates the group silencing events count accordingly.
+
+        :param flag: A flag indicating if opinion silencing ocurred.
+        :type flag: bool
+        """
+        if flag:
+            self.silenced_groups[self.current_iteration - 1] += 1
+        return None
+
     def increment_negated(self, flag: bool) -> None:
         """
         A simple setter function that checks the input flag and updates the opinion negation events count accordingly.
@@ -293,6 +337,17 @@ class LoggerVariables:
         """
         if flag:
             self.negated_agents[self.current_iteration - 1] += 1
+        return None
+
+    def increment_negated_group(self, flag: bool) -> None:
+        """
+        A simple setter function that checks the input flag and updates the group negation events count accordingly.
+
+        :param flag: A flag indicating if opinion negation ocurred.
+        :type flag: bool
+        """
+        if flag:
+            self.negated_groups[self.current_iteration - 1] += 1
         return None
 
     def store_aggregate_opinion(self, agg_opp: float) -> None:
@@ -371,11 +426,15 @@ class LoggerVariables:
         t_last: int = self.current_iteration - 2
         # -1 and -2 indexes due to indexing logic for lists...
 
-        # Only these 3 variables must be carried over, all others are calculated at the end of the timestep independently
+        # Only these 8 variables must be carried over, all others are calculated at the end of the timestep independently
         self.radicalised_agents[t_now] = self.radicalised_agents[t_last]
+        self.radicalised_groups[t_now] = self.radicalised_groups[t_last]
         self.deradicalised_agents[t_now] = self.deradicalised_agents[t_last]
+        self.deradicalised_groups[t_now] = self.deradicalised_groups[t_last]
         self.silenced_agents[t_now] = self.silenced_agents[t_last]
+        self.silenced_groups[t_now] = self.silenced_groups[t_last]
         self.negated_agents[t_now] = self.negated_agents[t_last]
+        self.negated_groups[t_now] = self.negated_groups[t_last]
         return None
 
     def current_layers_repr(self) -> str:
@@ -424,10 +483,14 @@ class LoggerVariables:
             f"""\n\n==== GATOH model variables at iteration {self.current_iteration}/{self.max_iterations}====
                 \n\nAggregate community opinion: {self.aggregate_opinions[self.current_iteration - 1]}
                 \nNumber of radicalisation events in the community: {self.radicalised_agents[self.current_iteration - 1]}
+                \nNumber of group radicalisation events in the community: {self.radicalised_groups[self.current_iteration - 1]}
                 \nNumber of deradicalisation events in the community: {self.deradicalised_agents[self.current_iteration - 1]}
+                \nNumber of group deradicalisation events in the community: {self.deradicalised_groups[self.current_iteration - 1]}
                 \nLog odds of radicalisation ocurring: {self.radicalisation_logodds[self.current_iteration - 1]}
                 \nNumber of opinion silencing events: {self.silenced_agents[self.current_iteration - 1]}
+                \nNumber of group silencing events: {self.silenced_groups[self.current_iteration - 1]}
                 \nNumber of opinion negation events: {self.negated_agents[self.current_iteration - 1]}
+                \nNumber of group negation events: {self.negated_groups[self.current_iteration - 1]}
                 \n\n**** Layer statistics ****\n\n"""
             + self.current_layers_repr()
         )
@@ -447,9 +510,13 @@ class LoggerVariables:
             "iterations",
             "aggregate_opinions",
             "radicalised_agents",
+            "radicalised_groups",
             "deradicalised_agents",
+            "deradicalised_groups",
             "silenced_agents",
+            "silenced_groups",
             "negated_agents",
+            "negated_groups",
             "radicalisation_logodds",
         ]
 
@@ -681,6 +748,49 @@ class LoggedAgents:
         """
         self.current_iteration += 1
         return None
+
+
+@dataclass
+class LoggedGroups:
+    """
+    Dataclass that provides the framework used to track specific attributes of certain groups throughout model runtime.
+
+    :param max_iterations: The maximum number of iterations that the model will run its simulation for.
+    :type max_iterations: int
+    """
+
+    # The maximum iterations that the simulation will run for
+    max_iterations: int
+    # The current iteration that the simulation is at
+    current_iteration: int = 0
+    # The dictionary that will be used to store group aggregate opinions
+    opinions: dict[str, list[float]] = field(default_factory=dict)
+    # The dictionary that will be used to store group previous opinions
+    previous_opinions: dict[str, list[float]] = field(default_factory=dict)
+    # The dictionary that will be used to store group radicalisation rates
+    radicalisations: dict[str, list[float]] = field(default_factory=dict)
+    # The dictionary that will be used to store group aggregate social weightings
+    social_weightings: dict[str, list[float]] = field(default_factory=dict)
+    # The dictionary that will be used to store group silencing rates
+    silencings: dict[str, list[float]] = field(default_factory=dict)
+    # The dictionary that will be used to store any custom attributes
+    custom_attributes: dict[str, dict[str, list[Any]]] = field(default_factory=dict)
+
+    def __init__(self, max_iterations: int) -> None:
+        """
+        Stores the number of max iterations.
+        """
+        self.max_iterations = max_iterations
+        self.current_iteration = 0
+        self.opinions = {}
+        self.previous_opinions = {}
+        self.radicalisations = {}
+        self.social_weightings = {}
+        self.silencings = {}
+        self.custom_attributes = {}
+
+    # TODO: Continue implementing the LoggedGroups class...
+
 
 class GATOHLogger:
     """
